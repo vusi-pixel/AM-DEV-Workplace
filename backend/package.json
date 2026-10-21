@@ -1,0 +1,46 @@
+{
+  "name": "@amdev/workplace-backend",
+  "version": "1.0.0",
+  "description": "AM DEV Pro Workplace — Backend API",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "NODE_ENV=production node server.js",
+    "db:migrate": "npx prisma migrate dev",
+    "db:migrate:deploy": "npx prisma migrate deploy",
+    "db:generate": "npx prisma generate",
+    "db:seed": "node prisma/seed.js",
+    "db:reset": "npx prisma migrate reset --force && node prisma/seed.js",
+    "db:studio": "npx prisma studio",
+    "test": "node --test tests/**/*.test.js",
+    "lint": "npx eslint src/ --ext .js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "keywords": [],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.11",
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "*",
+    "connect-pg-simple": "*",
+    "cookie-parser": "*",
+    "cors": "*",
+    "dotenv": "*",
+    "express": "*",
+    "express-rate-limit": "*",
+    "express-session": "*",
+    "helmet": "*",
+    "morgan": "*",
+    "pg": "*",
+    "prisma": "^6.19.3",
+    "uuid": "*",
+    "winston": "*",
+    "zod": "*"
+  },
+  "devDependencies": {
+    "eslint": "^10.13.0",
+    "nodemon": "^3.1.14"
+  }
+}

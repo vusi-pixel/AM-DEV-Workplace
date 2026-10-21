@@ -1,0 +1,639 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum EmploymentStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum WorkArrangement {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum WorkModeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+}
+
+enum AttendanceStatus {
+  CLOCKED_IN
+  CLOCKED_OUT
+  ABSENT
+  ON_LEAVE
+  HOLIDAY
+  MISSED_CLOCK_OUT
+}
+
+enum ClockInMethod {
+  ON_SITE
+  REMOTE
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  PERSONAL
+  MATERNITY
+  PATERNITY
+  UNPAID
+  OTHER
+}
+
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ExpenseStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  REIMBURSED
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationEventType {
+  CLOCK_IN
+  CLOCK_OUT
+  HYBRID_REQUEST_SUBMITTED
+  HYBRID_REQUEST_APPROVED
+  HYBRID_REQUEST_REJECTED
+  HYBRID_APPROVAL_REVOKED
+  LEAVE_REQUEST_SUBMITTED
+  LEAVE_REQUEST_APPROVED
+  LEAVE_REQUEST_REJECTED
+  EXPENSE_SUBMITTED
+  EXPENSE_APPROVED
+  EXPENSE_REJECTED
+  EXPENSE_REIMBURSED
+  TASK_ASSIGNED
+  ANNOUNCEMENT_PUBLISHED
+  ACCOUNT_ACTIVATED
+  ACCOUNT_DEACTIVATED
+  PERMISSION_CHANGED
+  ATTENDANCE_CORRECTION
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  CLOCK_IN
+  CLOCK_OUT
+  ATTENDANCE_CORRECTION
+  APPROVE
+  REJECT
+  REVOKE
+  ACTIVATE
+  DEACTIVATE
+  PERMISSION_CHANGE
+  ROLE_CHANGE
+  PASSWORD_CHANGE
+}
+
+// ─── Users & Identity ────────────────────────────────────────────────────────
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  passwordHash   String
+  isActive       Boolean  @default(true)
+  isFirstLogin   Boolean  @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  profile              EmployeeProfile?
+  userRoles            UserRole[]
+  sessions             Session[]
+  attendanceSessions   AttendanceSession[]
+  workModeRequests     WorkModeRequest[]   @relation("EmployeeWorkModeRequests")
+  reviewedWorkModeRequests WorkModeRequest[] @relation("ReviewerWorkModeRequests")
+  leaveRequests        LeaveRequest[]      @relation("EmployeeLeaveRequests")
+  reviewedLeaveRequests LeaveRequest[]     @relation("ReviewerLeaveRequests")
+  expenseClaims        ExpenseClaim[]      @relation("EmployeeExpenses")
+  reviewedExpenses     ExpenseClaim[]      @relation("ReviewerExpenses")
+  projectMemberships   ProjectMember[]
+  assignedTasks        Task[]              @relation("TaskAssignee")
+  createdTasks         Task[]              @relation("TaskCreator")
+  taskComments         TaskComment[]
+  announcements        Announcement[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  documentUploads      Document[]
+
+  @@map("users")
+}
+
+model EmployeeProfile {
+  id             String            @id @default(uuid())
+  userId         String            @unique
+  employeeId     String            @unique  // e.g. EMP-001
+  firstName      String
+  lastName       String
+  displayName    String?
+  phone          String?
+  avatarUrl      String?
+  jobTitle       String?
+  workArrangement WorkArrangement  @default(ON_SITE)
+  workArrangementApprovedAt DateTime?
+  employmentStatus EmploymentStatus @default(ACTIVE)
+  hireDate       DateTime?
+  departmentId   String?
+  managerId      String?           // FK to another EmployeeProfile
+  workScheduleId String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  // Relations
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department     Department?       @relation(fields: [departmentId], references: [id])
+  manager        EmployeeProfile?  @relation("ManagerReports", fields: [managerId], references: [id])
+  directReports  EmployeeProfile[] @relation("ManagerReports")
+  workSchedule   WorkSchedule?     @relation(fields: [workScheduleId], references: [id])
+
+  @@index([departmentId])
+  @@index([managerId])
+  @@index([employmentStatus])
+  @@map("employee_profiles")
+}
+
+// ─── Sessions (server-side) ───────────────────────────────────────────────────
+// connect-pg-simple manages this table; we also keep a typed reference.
+
+model Session {
+  sid    String   @id
+  sess   Json
+  expire DateTime
+  userId String?
+
+  user   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([expire])
+  @@index([userId])
+  @@map("session")
+}
+
+// ─── Departments ──────────────────────────────────────────────────────────────
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String   @unique  // e.g. HR, FIN, ADMIN
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employees   EmployeeProfile[]
+  documents   Document[]
+  announcements Announcement[]
+
+  @@map("departments")
+}
+
+// ─── Roles & Permissions ──────────────────────────────────────────────────────
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)  // system roles cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userRoles        UserRole[]
+  rolePermissions  RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique  // e.g. attendance.clock_in
+  description String?
+  module      String            // grouping: attendance, hr, finance, etc.
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  grantedAt DateTime @default(now())
+  grantedBy String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           String   @id @default(uuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ─── Work Schedules ───────────────────────────────────────────────────────────
+
+model WorkSchedule {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  days      WorkScheduleDay[]
+  employees EmployeeProfile[]
+
+  @@map("work_schedules")
+}
+
+model WorkScheduleDay {
+  id             String   @id @default(uuid())
+  workScheduleId String
+  dayOfWeek      Int      // 0=Sunday … 6=Saturday
+  isWorkDay      Boolean  @default(true)
+  startTime      String   // HH:MM in company timezone
+  endTime        String   // HH:MM in company timezone
+  graceMinutes   Int      @default(0)
+
+  workSchedule WorkSchedule @relation(fields: [workScheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([workScheduleId, dayOfWeek])
+  @@map("work_schedule_days")
+}
+
+// ─── Holidays ─────────────────────────────────────────────────────────────────
+
+model Holiday {
+  id          String   @id @default(uuid())
+  name        String
+  date        DateTime @db.Date
+  description String?
+  isRecurring Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([date])
+  @@map("holidays")
+}
+
+// ─── Attendance ───────────────────────────────────────────────────────────────
+
+model AttendanceSession {
+  id           String           @id @default(uuid())
+  userId       String
+  workDate     DateTime         @db.Date   // canonical work date (local company date)
+  clockInAt    DateTime         // authoritative server timestamp (timestamptz)
+  clockOutAt   DateTime?
+  clockInMethod  ClockInMethod
+  clockOutMethod ClockInMethod?
+  status       AttendanceStatus @default(CLOCKED_IN)
+  durationMinutes Int?          // computed on clock-out
+  isOvernight  Boolean          @default(false)
+  notes        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  user             User                    @relation(fields: [userId], references: [id])
+  correctionRequests AttendanceCorrectionRequest[]
+
+  // Prevent two active sessions for the same user on the same workDate
+  @@unique([userId, workDate])
+  @@index([userId])
+  @@index([workDate])
+  @@index([status])
+  @@map("attendance_sessions")
+}
+
+model AttendanceCorrectionRequest {
+  id                 String   @id @default(uuid())
+  attendanceSessionId String
+  requestedById      String
+  reason             String
+  originalClockIn    DateTime?
+  originalClockOut   DateTime?
+  requestedClockIn   DateTime?
+  requestedClockOut  DateTime?
+  status             WorkModeRequestStatus @default(PENDING)
+  reviewedById       String?
+  reviewedAt         DateTime?
+  reviewComments     String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  session    AttendanceSession @relation(fields: [attendanceSessionId], references: [id])
+
+  @@map("attendance_correction_requests")
+}
+
+// ─── Work Mode / Hybrid Requests ──────────────────────────────────────────────
+
+model WorkModeRequest {
+  id                String                @id @default(uuid())
+  employeeId        String
+  requestedArrangement WorkArrangement
+  reason            String
+  effectiveFrom     DateTime?             @db.Date
+  effectiveTo       DateTime?             @db.Date
+  status            WorkModeRequestStatus @default(PENDING)
+  reviewedById      String?
+  reviewedAt        DateTime?
+  reviewComments    String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  employee  User @relation("EmployeeWorkModeRequests", fields: [employeeId], references: [id])
+  reviewer  User? @relation("ReviewerWorkModeRequests", fields: [reviewedById], references: [id])
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("work_mode_requests")
+}
+
+// ─── Leave Requests ───────────────────────────────────────────────────────────
+
+model LeaveRequest {
+  id           String             @id @default(uuid())
+  employeeId   String
+  leaveType    LeaveType
+  startDate    DateTime           @db.Date
+  endDate      DateTime           @db.Date
+  reason       String?
+  status       LeaveRequestStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewComments String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  employee User  @relation("EmployeeLeaveRequests", fields: [employeeId], references: [id])
+  reviewer User? @relation("ReviewerLeaveRequests", fields: [reviewedById], references: [id])
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("leave_requests")
+}
+
+// ─── Finance ──────────────────────────────────────────────────────────────────
+
+model ExpenseCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  expenses ExpenseClaim[]
+
+  @@map("expense_categories")
+}
+
+model ExpenseClaim {
+  id           String        @id @default(uuid())
+  employeeId   String
+  categoryId   String
+  title        String
+  description  String?
+  amount       Decimal       @db.Decimal(12, 2)
+  currency     String        @default("USD")
+  receiptUrl   String?
+  expenseDate  DateTime      @db.Date
+  status       ExpenseStatus @default(DRAFT)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewComments String?
+  reimbursedAt DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  employee User            @relation("EmployeeExpenses", fields: [employeeId], references: [id])
+  reviewer User?           @relation("ReviewerExpenses", fields: [reviewedById], references: [id])
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([employeeId])
+  @@index([status])
+  @@map("expense_claims")
+}
+
+// ─── Projects & Tasks ─────────────────────────────────────────────────────────
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  startDate   DateTime?     @db.Date
+  endDate     DateTime?     @db.Date
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  members ProjectMember[]
+  tasks   Task[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  role      String   @default("member")
+  joinedAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Task {
+  id          String       @id @default(uuid())
+  projectId   String
+  title       String
+  description String?
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?    @db.Date
+  assigneeId  String?
+  createdById String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project  Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee User?         @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator  User          @relation("TaskCreator", fields: [createdById], references: [id])
+  comments TaskComment[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
+  @@map("tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  taskId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([taskId])
+  @@map("task_comments")
+}
+
+// ─── Announcements ────────────────────────────────────────────────────────────
+
+model Announcement {
+  id           String    @id @default(uuid())
+  title        String
+  content      String
+  authorId     String
+  departmentId String?   // null = company-wide
+  isPublished  Boolean   @default(false)
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  author     User        @relation(fields: [authorId], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  @@index([isPublished])
+  @@index([departmentId])
+  @@map("announcements")
+}
+
+// ─── Documents ────────────────────────────────────────────────────────────────
+
+model Document {
+  id           String    @id @default(uuid())
+  title        String
+  description  String?
+  category     String?
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  storePath    String    // server-side storage path, never exposed publicly
+  departmentId String?   // null = company-wide
+  uploadedById String
+  isPublic     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  uploadedBy User        @relation(fields: [uploadedById], references: [id])
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  @@index([departmentId])
+  @@map("documents")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String                @id @default(uuid())
+  userId    String
+  eventType NotificationEventType
+  title     String
+  message   String
+  isRead    Boolean               @default(false)
+  readAt    DateTime?
+  metadata  Json?                 // optional event-specific data
+  createdAt DateTime              @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id           String      @id @default(uuid())
+  actorId      String?     // user who performed the action (null = system)
+  action       AuditAction
+  resourceType String      // e.g. "AttendanceSession", "WorkModeRequest"
+  resourceId   String?
+  description  String
+  before       Json?       // snapshot before change
+  after        Json?       // snapshot after change
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime    @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
