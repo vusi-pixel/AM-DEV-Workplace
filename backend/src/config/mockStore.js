@@ -226,11 +226,11 @@ const users = [
       id: 'prof-emp',
       userId: 'usr-emp',
       employeeId: 'EMP-004',
-      firstName: 'Alex',
-      lastName: 'Rivers',
-      displayName: 'Alex Rivers',
+      firstName: 'Esther',
+      lastName: 'N.',
+      displayName: 'Esther N.',
       phone: '+1 (555) 010-0004',
-      jobTitle: 'Junior Developer',
+      jobTitle: 'Employee',
       workArrangement: 'ON_SITE',
       employmentStatus: 'ACTIVE',
       departmentId: 'dept-eng',
@@ -244,15 +244,28 @@ const users = [
 
 let attendanceSessions = [
   {
-    id: 'sess-seed-1',
-    userId: 'usr-admin',
+    id: 'sess-seed-esther',
+    userId: 'usr-emp',
     workDate: new Date().toISOString().split('T')[0],
-    clockInAt: new Date(Date.now() - 14400000).toISOString(),
+    clockInAt: new Date(new Date().setHours(8, 12, 0, 0)).toISOString(),
     clockOutAt: null,
     clockInMethod: 'ON_SITE',
     clockOutMethod: null,
     status: 'CLOCKED_IN',
-    durationMinutes: 240,
+    durationMinutes: 504,
+    notes: 'On-site standard workday',
+    createdAt: new Date(),
+  },
+  {
+    id: 'sess-seed-1',
+    userId: 'usr-admin',
+    workDate: new Date().toISOString().split('T')[0],
+    clockInAt: new Date(new Date().setHours(8, 12, 0, 0)).toISOString(),
+    clockOutAt: null,
+    clockInMethod: 'ON_SITE',
+    clockOutMethod: null,
+    status: 'CLOCKED_IN',
+    durationMinutes: 504,
     notes: 'Morning infrastructure security review',
     createdAt: new Date(),
   },
@@ -402,6 +415,301 @@ let departmentBudgets = [
   { department: 'Front Desk & Operations', totalBudget: 85000, spent: 49200, committed: 6500, currency: 'USD', fiscalYear: 2026 },
 ];
 
+// ─── Tasks ───────────────────────────────────────────────────────────────────
+let tasks = [
+  {
+    id: 'task-1',
+    title: 'Prepare Q2 Progress Report',
+    description: 'Compile attendance, leave, and project metrics for Q2.',
+    assignedToId: 'usr-emp',
+    assignedById: 'usr-hr',
+    assignedByDept: 'HR',
+    priority: 'HIGH',
+    status: 'IN_PROGRESS',
+    dueDate: new Date().toISOString().split('T')[0],
+    projectId: null,
+    projectName: null,
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-2',
+    title: 'Review Client Proposal',
+    description: 'Review the latest client proposal and provide feedback.',
+    assignedToId: 'usr-emp',
+    assignedById: 'usr-fin',
+    assignedByDept: 'Finance',
+    priority: 'MEDIUM',
+    status: 'TODO',
+    dueDate: new Date().toISOString().split('T')[0],
+    projectId: null,
+    projectName: 'Client Onboarding Q4',
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-3',
+    title: 'Update Project Timeline',
+    description: 'Revise the project timeline based on new delivery dates.',
+    assignedToId: 'usr-emp',
+    assignedById: 'usr-admin',
+    assignedByDept: 'Administration',
+    priority: 'MEDIUM',
+    status: 'TODO',
+    dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    projectId: null,
+    projectName: 'Platform Delivery',
+    createdAt: new Date(Date.now() - 259200000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-4',
+    title: 'Complete System Architecture Review',
+    description: 'Audit microservice dependencies and security permissions.',
+    assignedToId: 'usr-emp',
+    assignedById: 'usr-admin',
+    assignedByDept: 'Engineering',
+    priority: 'HIGH',
+    status: 'TODO',
+    dueDate: new Date().toISOString().split('T')[0],
+    projectId: null,
+    projectName: 'Security Audit',
+    createdAt: new Date(Date.now() - 43200000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-5',
+    title: 'Submit Weekly Operations Summary',
+    description: 'Provide departmental summary to leadership team.',
+    assignedToId: 'usr-emp',
+    assignedById: 'usr-hr',
+    assignedByDept: 'Operations',
+    priority: 'LOW',
+    status: 'TODO',
+    dueDate: new Date().toISOString().split('T')[0],
+    projectId: null,
+    projectName: null,
+    createdAt: new Date(Date.now() - 36000000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-admin-1',
+    title: 'Prepare Q2 Progress Report',
+    description: 'Compile attendance, leave, and project metrics for Q2.',
+    assignedToId: 'usr-admin',
+    assignedById: 'usr-hr',
+    assignedByDept: 'HR',
+    priority: 'HIGH',
+    status: 'IN_PROGRESS',
+    dueDate: new Date().toISOString().split('T')[0],
+    projectId: null,
+    projectName: null,
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-admin-2',
+    title: 'Review Client Proposal',
+    description: 'Review the latest client proposal and provide feedback.',
+    assignedToId: 'usr-admin',
+    assignedById: 'usr-fin',
+    assignedByDept: 'Finance',
+    priority: 'MEDIUM',
+    status: 'TODO',
+    dueDate: new Date().toISOString().split('T')[0],
+    projectId: null,
+    projectName: 'Client Onboarding Q4',
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-admin-3',
+    title: 'Update Project Timeline',
+    description: 'Revise the project timeline based on new delivery dates.',
+    assignedToId: 'usr-admin',
+    assignedById: 'usr-admin',
+    assignedByDept: 'Administration',
+    priority: 'MEDIUM',
+    status: 'TODO',
+    dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    projectId: null,
+    projectName: 'Platform Delivery',
+    createdAt: new Date(Date.now() - 259200000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// ─── Messages / Conversations ─────────────────────────────────────────────────
+let messages = [
+  {
+    id: 'msg-1',
+    fromUserId: 'usr-hr',
+    fromName: 'Sarah Okafor (HR)',
+    fromDept: 'HR',
+    toUserId: 'usr-emp',
+    subject: 'Leave Balance Review',
+    body: 'Please review your leave balance...',
+    isRead: false,
+    threadId: 'thread-1',
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'msg-2',
+    fromUserId: 'usr-hybrid',
+    fromName: 'David Kim (Projects)',
+    fromDept: 'Projects',
+    toUserId: 'usr-emp',
+    subject: 'Project Timeline Updated',
+    body: 'Project timeline updated.',
+    isRead: false,
+    threadId: 'thread-2',
+    createdAt: new Date(Date.now() - 10800000).toISOString(),
+  },
+  {
+    id: 'msg-3',
+    fromUserId: 'usr-fin',
+    fromName: 'Finance Team',
+    fromDept: 'Finance',
+    toUserId: 'usr-emp',
+    subject: 'Q1 Expenses Due',
+    body: 'Q1 expenses are now due.',
+    isRead: true,
+    threadId: 'thread-3',
+    createdAt: new Date(Date.now() - 18000000).toISOString(),
+  },
+  {
+    id: 'msg-admin-1',
+    fromUserId: 'usr-hr',
+    fromName: 'Sarah Okafor (HR)',
+    fromDept: 'HR',
+    toUserId: 'usr-admin',
+    subject: 'Leave Balance Review',
+    body: 'Please review your leave balance...',
+    isRead: false,
+    threadId: 'thread-1',
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'msg-admin-2',
+    fromUserId: 'usr-hybrid',
+    fromName: 'David Kim (Projects)',
+    fromDept: 'Projects',
+    toUserId: 'usr-admin',
+    subject: 'Project Timeline Updated',
+    body: 'Project timeline updated.',
+    isRead: false,
+    threadId: 'thread-2',
+    createdAt: new Date(Date.now() - 10800000).toISOString(),
+  },
+  {
+    id: 'msg-admin-3',
+    fromUserId: 'usr-fin',
+    fromName: 'Finance Team',
+    fromDept: 'Finance',
+    toUserId: 'usr-admin',
+    subject: 'Q1 Expenses Due',
+    body: 'Q1 expenses are now due.',
+    isRead: true,
+    threadId: 'thread-3',
+    createdAt: new Date(Date.now() - 18000000).toISOString(),
+  },
+  {
+    id: 'msg-4',
+    fromUserId: 'usr-admin',
+    fromName: 'System Administrator',
+    fromDept: 'Administration',
+    toUserId: 'usr-hr',
+    subject: 'New Policy Draft',
+    body: 'Please review the new hybrid work policy draft and provide feedback.',
+    isRead: false,
+    threadId: 'thread-4',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'msg-5',
+    fromUserId: 'usr-admin',
+    fromName: 'System Administrator',
+    fromDept: 'Administration',
+    toUserId: 'usr-fin',
+    subject: 'Budget Approval Required',
+    body: 'The Q4 infrastructure budget requires your approval before Nov 1.',
+    isRead: false,
+    threadId: 'thread-5',
+    createdAt: new Date(Date.now() - 1800000).toISOString(),
+  },
+  {
+    id: 'msg-6',
+    fromUserId: 'usr-hr',
+    fromName: 'Sarah Jenkins',
+    fromDept: 'HR',
+    toUserId: 'usr-fin',
+    subject: 'Payroll Submission',
+    body: 'October payroll data is ready for review. Please process by the 25th.',
+    isRead: false,
+    threadId: 'thread-6',
+    createdAt: new Date(Date.now() - 5400000).toISOString(),
+  },
+];
+
+// ─── Company Timeline Events ──────────────────────────────────────────────────
+let timelineEvents = [
+  {
+    id: 'tl-1',
+    type: 'MEETING',
+    color: 'blue',
+    title: 'Team Sync Meeting – Project Updates',
+    description: 'Quarterly project status sync across all departments.',
+    audience: 'ALL',
+    eventAt: new Date(new Date().setHours(15, 0, 0, 0)).toISOString(),
+    createdByUserId: 'usr-admin',
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: 'tl-2',
+    type: 'ANNOUNCEMENT',
+    color: 'green',
+    title: 'New HR Policy Published',
+    description: 'Updated hybrid work policy is now live in the HR workspace.',
+    audience: 'ALL',
+    eventAt: new Date(new Date().setHours(11, 0, 0, 0)).toISOString(),
+    createdByUserId: 'usr-hr',
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+  },
+  {
+    id: 'tl-3',
+    type: 'FINANCE',
+    color: 'purple',
+    title: 'Q1 Financial Report Approved',
+    description: 'The Q1 financial report has been reviewed and approved by the finance team.',
+    audience: 'ALL',
+    eventAt: new Date(Date.now() - 86400000).toISOString(),
+    createdByUserId: 'usr-fin',
+    createdAt: new Date(Date.now() - 259200000).toISOString(),
+  },
+  {
+    id: 'tl-4',
+    type: 'TASK',
+    color: 'amber',
+    title: 'Project Milestone: API Gateway v2 Released',
+    description: 'The API Gateway v2.0 has been successfully deployed to production.',
+    audience: 'ALL',
+    eventAt: new Date(Date.now() - 172800000).toISOString(),
+    createdByUserId: 'usr-hybrid',
+    createdAt: new Date(Date.now() - 345600000).toISOString(),
+  },
+  {
+    id: 'tl-5',
+    type: 'HR',
+    color: 'emerald',
+    title: 'New Team Member Onboarded',
+    description: 'Alex Rivers has joined the Engineering team as Junior Developer.',
+    audience: 'ALL',
+    eventAt: new Date(Date.now() - 604800000).toISOString(),
+    createdByUserId: 'usr-hr',
+    createdAt: new Date(Date.now() - 691200000).toISOString(),
+  },
+];
+
 // ─── Front Desk specific data ─────────────────────────────────────────────────
 let visitors = [
   {
@@ -481,7 +789,7 @@ function createMockPrisma() {
       }
       return Promise.all(fn);
     },
-    $disconnect: async () => {},
+    $disconnect: async () => { },
 
     user: {
       findUnique: async ({ where }) => {
@@ -728,6 +1036,73 @@ function createMockPrisma() {
     workSchedule: {
       findMany: async () => JSON.parse(JSON.stringify(workSchedules)),
     },
+
+    task: {
+      findMany: async ({ where } = {}) => {
+        let list = tasks;
+        if (where?.assignedToId) list = list.filter(t => t.assignedToId === where.assignedToId);
+        if (where?.status) list = list.filter(t => t.status === where.status);
+        return JSON.parse(JSON.stringify(list));
+      },
+      count: async ({ where } = {}) => {
+        let list = tasks;
+        if (where?.assignedToId) list = list.filter(t => t.assignedToId === where.assignedToId);
+        if (where?.status && where.status !== 'DONE') list = list.filter(t => t.status !== 'DONE');
+        return list.length;
+      },
+      findUnique: async ({ where }) => {
+        const t = tasks.find(x => x.id === where.id);
+        return t ? JSON.parse(JSON.stringify(t)) : null;
+      },
+      create: async ({ data }) => {
+        const nt = { id: `task-${Date.now()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...data };
+        tasks.unshift(nt);
+        return JSON.parse(JSON.stringify(nt));
+      },
+      update: async ({ where, data }) => {
+        const t = tasks.find(x => x.id === where.id);
+        if (t) Object.assign(t, data, { updatedAt: new Date().toISOString() });
+        return JSON.parse(JSON.stringify(t || {}));
+      },
+    },
+
+    message: {
+      findMany: async ({ where } = {}) => {
+        let list = messages;
+        if (where?.toUserId) list = list.filter(m => m.toUserId === where.toUserId);
+        if (where?.fromUserId) list = list.filter(m => m.fromUserId === where.fromUserId);
+        return JSON.parse(JSON.stringify(list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))));
+      },
+      count: async ({ where } = {}) => {
+        let list = messages;
+        if (where?.toUserId) list = list.filter(m => m.toUserId === where.toUserId);
+        if (where?.isRead !== undefined) list = list.filter(m => m.isRead === where.isRead);
+        return list.length;
+      },
+      create: async ({ data }) => {
+        const nm = { id: `msg-${Date.now()}`, isRead: false, createdAt: new Date().toISOString(), ...data };
+        messages.unshift(nm);
+        return JSON.parse(JSON.stringify(nm));
+      },
+      update: async ({ where, data }) => {
+        const m = messages.find(x => x.id === where.id);
+        if (m) Object.assign(m, data);
+        return JSON.parse(JSON.stringify(m || {}));
+      },
+    },
+
+    timelineEvent: {
+      findMany: async ({ where } = {}) => {
+        let list = timelineEvents;
+        if (where?.audience && where.audience !== 'ALL') list = list.filter(e => e.audience === where.audience || e.audience === 'ALL');
+        return JSON.parse(JSON.stringify(list.sort((a, b) => new Date(b.eventAt) - new Date(a.eventAt))));
+      },
+      create: async ({ data }) => {
+        const ne = { id: `tl-${Date.now()}`, createdAt: new Date().toISOString(), ...data };
+        timelineEvents.unshift(ne);
+        return JSON.parse(JSON.stringify(ne));
+      },
+    },
   };
 }
 
@@ -748,4 +1123,7 @@ module.exports = {
   departmentBudgets,
   visitors,
   deliveries,
+  tasks,
+  messages,
+  timelineEvents,
 };

@@ -216,3 +216,61 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   errors?: Array<{ field: string; message: string }>;
 }
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  assignedToId: string;
+  assignedById: string;
+  assignedByDept: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE' | 'BLOCKED';
+  dueDate: string | null;
+  projectId: string | null;
+  projectName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Messages ────────────────────────────────────────────────────────────────
+export interface Message {
+  id: string;
+  fromUserId: string;
+  fromName: string;
+  fromDept: string;
+  toUserId: string;
+  subject: string;
+  body: string;
+  isRead: boolean;
+  threadId: string;
+  createdAt: string;
+}
+
+// ─── Timeline ────────────────────────────────────────────────────────────────
+export interface TimelineEvent {
+  id: string;
+  type: string;
+  color: string;
+  title: string;
+  description: string;
+  audience: string;
+  eventAt: string;
+  createdByUserId: string;
+  createdAt: string;
+}
+
+// ─── Dashboard Summary ────────────────────────────────────────────────────────
+export interface DashboardSummary {
+  summary: {
+    todaysTasks: number;
+    unreadMessages: number;
+    pendingApprovals: number;
+    projectUpdates: number;
+  };
+  myTasks: Task[];
+  messages: Message[];
+  timeline: TimelineEvent[];
+}
+

@@ -40,10 +40,16 @@ export const App: React.FC = () => {
 
               {/* Operations & Workspaces */}
               <Route path="/workspaces" element={<Workspaces />} />
+              <Route path="/tasks" element={<Workspaces />} />
+              <Route path="/projects" element={<Workspaces />} />
+              <Route path="/resources" element={<Workspaces />} />
               <Route path="/attendance" element={<Attendance />} />
+              <Route path="/calendar" element={<Attendance />} />
               <Route path="/work-mode" element={<WorkMode />} />
               <Route path="/leave" element={<LeaveManagement />} />
+              <Route path="/expenses" element={<FinancePortal />} />
               <Route path="/directory" element={<Directory />} />
+              <Route path="/profile" element={<EmployeePortal />} />
 
               {/* Admin specific portal */}
               <Route path="/admin" element={<Admin />} />

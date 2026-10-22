@@ -4,7 +4,7 @@ import { Clock, CheckCircle2, AlertTriangle, LogIn, LogOut, Laptop, Building2 } 
 import api from '../../services/api';
 
 export const AttendanceBanner: React.FC = () => {
-  const { user, attendanceStatus, refreshAttendance, hasPermission } = useAuth();
+  const { user, attendanceStatus, refreshAttendance, hasPermission, clockOut } = useAuth();
   const [elapsed, setElapsed] = useState<string>('00:00:00');
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -53,21 +53,15 @@ export const AttendanceBanner: React.FC = () => {
   };
 
   const handleQuickClockOut = async () => {
-    if (!confirm('Are you sure you want to clock out for today?')) return;
+    if (!confirm('Are you sure you want to clock out for today? You will be automatically signed out.')) return;
     setLoading(true);
     setErrorMsg(null);
     try {
-      const method = user?.profile?.workArrangement === 'REMOTE' || user?.profile?.workArrangement === 'HYBRID' 
-        ? 'REMOTE' 
-        : 'ON_SITE';
-      await api.post('/attendance/clock-out', {
-        method,
+      await clockOut({
         notes: 'Clock out from banner',
       });
-      await refreshAttendance();
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to clock out');
-    } finally {
       setLoading(false);
     }
   };

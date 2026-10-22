@@ -8,6 +8,7 @@ interface AuthContextType {
   attendanceStatus: AttendanceStatus | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  clockOut: (options?: { method?: string; notes?: string }) => Promise<void>;
   refreshUser: () => Promise<void>;
   refreshAttendance: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
@@ -90,6 +91,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const clockOut = async (options?: { method?: string; notes?: string }) => {
+    try {
+      const method = options?.method || (user?.profile?.workArrangement === 'ON_SITE' ? 'ON_SITE' : 'REMOTE');
+      await api.post('/attendance/clock-out', {
+        method,
+        notes: options?.notes,
+      });
+    } finally {
+      setUser(null);
+      setAttendanceStatus(null);
+      window.location.href = '/login?signed_out=clock_out';
+    }
+  };
+
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
     if (user.roles?.includes('System Administrator')) return true;
@@ -114,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         attendanceStatus,
         login,
         logout,
+        clockOut,
         refreshUser,
         refreshAttendance,
         hasPermission,

@@ -160,4 +160,51 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .scrollbar-thin { scrollbar-width: thin; }
+
+  /* ── Flip Clock 3D Mechanics ── */
+  .perspective-500 {
+    perspective: 500px;
+    -webkit-perspective: 500px;
+  }
+  .perspective-1000 {
+    perspective: 1000px;
+    -webkit-perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
 }
+
+@keyframes flipTopFold {
+  0% {
+    transform: rotateX(0deg);
+  }
+  100% {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes flipBottomUnfold {
+  0% {
+    transform: rotateX(90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+.flip-card-top-anim {
+  transform-origin: bottom center;
+  animation: flipTopFold 0.28s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+}
+
+.flip-card-bottom-anim {
+  transform-origin: top center;
+  animation: flipBottomUnfold 0.28s cubic-bezier(0.45, 0.05, 0.55, 0.95) 0.28s forwards;
+}
+

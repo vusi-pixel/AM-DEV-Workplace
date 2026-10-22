@@ -77,6 +77,9 @@ const approveLeave = async (req, res, next) => {
     const request = await prisma.leaveRequest.findUnique({ where: { id: req.params.id } });
     if (!request) return response.error(res, 'Leave request not found', 404);
     if (request.status !== 'PENDING') return response.error(res, 'Request already reviewed', 409);
+    if (request.employeeId === req.user.id) {
+      return response.error(res, 'You cannot approve your own leave request', 403);
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const u = await tx.leaveRequest.update({
@@ -105,6 +108,9 @@ const rejectLeave = async (req, res, next) => {
     const request = await prisma.leaveRequest.findUnique({ where: { id: req.params.id } });
     if (!request) return response.error(res, 'Leave request not found', 404);
     if (request.status !== 'PENDING') return response.error(res, 'Request already reviewed', 409);
+    if (request.employeeId === req.user.id) {
+      return response.error(res, 'You cannot reject your own leave request', 403);
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const u = await tx.leaveRequest.update({
@@ -153,7 +159,7 @@ const getMyLeave = async (req, res, next) => {
       where: { employeeId: req.user.id },
       orderBy: { createdAt: 'desc' },
     });
-    return response.success(res, { requests });
+    return response.success(res, requests);
   } catch (err) {
     next(err);
   }

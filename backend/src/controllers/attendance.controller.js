@@ -2,6 +2,7 @@
 const attendanceService = require('../services/attendance.service');
 const response = require('../utils/response');
 const { parsePagination } = require('../utils/helpers');
+const logger = require('../config/logger');
 
 const getStatus = async (req, res, next) => {
   try {
@@ -31,7 +32,18 @@ const clockOut = async (req, res, next) => {
   try {
     const { notes } = req.body;
     const session = await attendanceService.clockOut(req.user.id, { notes });
-    return response.success(res, { session }, 'Clocked out successfully');
+    
+    // Automatically terminate user session and sign out upon clock out
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) logger.warn('Failed to destroy session upon clock out', { err });
+        res.clearCookie('connect.sid');
+        return response.success(res, { session, signedOut: true }, 'Shift ended. Clocked out and automatically signed out.');
+      });
+    } else {
+      res.clearCookie('connect.sid');
+      return response.success(res, { session, signedOut: true }, 'Shift ended. Clocked out and automatically signed out.');
+    }
   } catch (err) {
     next(err);
   }

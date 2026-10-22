@@ -15,7 +15,7 @@ const submit = async (req, res, next) => {
 const getMyRequests = async (req, res, next) => {
   try {
     const requests = await workModeService.getMyRequests(req.user.id);
-    return response.success(res, { requests });
+    return response.success(res, requests);
   } catch (err) {
     next(err);
   }

@@ -1,174 +1,182 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  LayoutDashboard,
-  Clock,
-  Briefcase,
-  CalendarDays,
-  Users,
-  ShieldAlert,
-  FolderKanban,
-  Sparkles,
-  Building2,
-  DollarSign,
-  ScanLine,
-  UserCheck,
-  Laptop
+  Home, LayoutDashboard, Clock, CheckSquare, MessageSquare, Bell, BookOpen,
+  User, Settings, HelpCircle, LogOut, Users, DollarSign, Shield, Rocket,
+  ChevronDown, ChevronRight, Layers, X,
 } from 'lucide-react';
 
-export const Sidebar: React.FC = () => {
-  const { user, hasPermission, hasRole } = useAuth();
+interface SidebarProps {
+  open?: boolean;
+  onClose?: () => void;
+}
 
-  const isHR = hasPermission('attendance.read.all') || hasPermission('leave.review') || hasRole('HR Manager') || hasRole('System Administrator');
-  const isFinance = hasPermission('finance.read') || hasRole('Finance Manager') || hasRole('System Administrator');
-  const isFrontDesk = hasPermission('frontdesk.visitors.manage') || hasRole('Front Desk Officer') || hasRole('System Administrator');
+export const Sidebar: React.FC<SidebarProps> = ({ open = false, onClose }) => {
+  const { user, hasPermission, hasRole, logout } = useAuth();
+  const [deptExpanded, setDeptExpanded] = useState(true);
+
+  const isHR = hasPermission('attendance.read.all') || hasPermission('leave.review') || hasRole('HR Manager') || hasRole('HR Officer') || hasRole('System Administrator');
+  const isFinance = hasPermission('finance.read') || hasRole('Finance Manager') || hasRole('Finance Officer') || hasRole('System Administrator');
   const isAdmin = hasPermission('settings.manage') || hasRole('System Administrator');
 
-  const navClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group ${
+  const navItem = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
       isActive
-        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-semibold'
-        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold'
+        : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
     }`;
 
-  const deptClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all group border ${
+  const deptItem = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
       isActive
-        ? 'bg-slate-800 text-white border-blue-500/50 shadow-md shadow-blue-600/10 font-bold'
-        : 'text-slate-400 border-transparent hover:text-slate-100 hover:bg-slate-800/50'
+        ? 'bg-slate-800 text-white border-l-2 border-blue-500 pl-2.5'
+        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
     }`;
 
   return (
-    <aside className="w-64 bg-slate-900/95 border-r border-slate-800/80 flex flex-col justify-between h-[calc(100vh-4rem)] sticky top-16 select-none">
-      <div className="p-4 space-y-5 overflow-y-auto">
-        {/* Department Interfaces (Core Focus from Master Prompt) */}
-        <div>
-          <div className="px-2 mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-              Department Portals
-            </span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-bold">
-              MODULAR
-            </span>
-          </div>
-
-          <nav className="space-y-1.5">
-            {/* 1. Worker Portal */}
-            <NavLink to="/employee" className={deptClasses}>
-              <div className="p-1.5 rounded-lg bg-blue-500/15 text-blue-400 group-hover:scale-105 transition-transform">
-                <Laptop className="w-3.5 h-3.5" />
-              </div>
-              <div className="flex-1">
-                <div className="text-slate-200">Worker Portal</div>
-                <div className="text-[10px] text-slate-500 font-normal">Shift punch, self-service</div>
-              </div>
-            </NavLink>
-
-            {/* 2. HR Dashboard */}
-            {isHR && (
-              <NavLink to="/hr" className={deptClasses}>
-                <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 group-hover:scale-105 transition-transform">
-                  <UserCheck className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-slate-200">HR Dashboard</div>
-                  <div className="text-[10px] text-slate-500 font-normal">Live status, leave desk</div>
-                </div>
-              </NavLink>
-            )}
-
-            {/* 3. Finance & Payroll */}
-            {isFinance && (
-              <NavLink to="/finance" className={deptClasses}>
-                <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-400 group-hover:scale-105 transition-transform">
-                  <DollarSign className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-slate-200">Finance & Payroll</div>
-                  <div className="text-[10px] text-slate-500 font-normal">Hours audit, expenses</div>
-                </div>
-              </NavLink>
-            )}
-
-            {/* 4. Front Desk & Kiosk */}
-            {isFrontDesk && (
-              <NavLink to="/front-desk" className={deptClasses}>
-                <div className="p-1.5 rounded-lg bg-cyan-500/15 text-cyan-400 group-hover:scale-105 transition-transform">
-                  <ScanLine className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-slate-200">Front Desk & Kiosk</div>
-                  <div className="text-[10px] text-slate-500 font-normal">Visitors, arrival scanner</div>
-                </div>
-              </NavLink>
-            )}
-          </nav>
-        </div>
-
-        {/* Global Operations Hub */}
-        <div>
-          <div className="px-2 mb-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
-              Operations & Workspaces
-            </span>
-          </div>
-          <nav className="space-y-1">
-            <NavLink to="/" end className={navClasses}>
-              <LayoutDashboard className="w-4 h-4 text-blue-400" />
-              <span>Executive Overview</span>
-            </NavLink>
-            <NavLink to="/workspaces" className={navClasses}>
-              <FolderKanban className="w-4 h-4 text-indigo-400" />
-              <span>Team Workspaces (SharePoint)</span>
-            </NavLink>
-            <NavLink to="/attendance" className={navClasses}>
-              <Clock className="w-4 h-4 text-emerald-400" />
-              <span>Attendance History</span>
-            </NavLink>
-            <NavLink to="/directory" className={navClasses}>
-              <Users className="w-4 h-4 text-purple-400" />
-              <span>Staff Directory</span>
-            </NavLink>
-          </nav>
-        </div>
-
-        {/* Admin Governance */}
-        {isAdmin && (
-          <div>
-            <div className="px-2 mb-2 flex items-center justify-between">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
-                Administration
-              </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-mono">
-                SEC-OPS
-              </span>
+    <>
+      {open && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`w-64 bg-[#0b1b3a] border-r border-slate-800/80 flex flex-col h-screen sticky top-0 select-none overflow-hidden z-50
+          max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:transition-transform ${open ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'} lg:translate-x-0`}
+      >
+        <div className="px-4 py-4 border-b border-slate-800/60 flex-shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 flex-shrink-0">
+              <Layers className="w-5 h-5 text-white" />
             </div>
-            <nav className="space-y-1">
-              <NavLink to="/admin" className={navClasses}>
-                <ShieldAlert className="w-4 h-4 text-rose-400" />
-                <span>Audit & System Control</span>
-              </NavLink>
-            </nav>
+            <div>
+              <div className="text-sm font-extrabold text-white leading-none">AM DEV Pro</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Workplace</div>
+            </div>
           </div>
-        )}
-      </div>
+          <button type="button" className="lg:hidden text-slate-400 hover:text-white" onClick={onClose} aria-label="Close sidebar">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-      {/* Footer / System Status */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/40">
-        <div className="bg-slate-800/50 rounded-lg p-2.5 border border-slate-700/50">
-          <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Department Mesh
-            </span>
-            <span className="text-[10px] font-mono text-emerald-400">ONLINE</span>
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5 scrollbar-thin" aria-label="Workplace">
+          <NavLink to="/" end className={navItem} onClick={onClose}>
+            <Home className="w-4 h-4 flex-shrink-0" />
+            <span>Home</span>
+          </NavLink>
+          <NavLink to="/employee" className={navItem} onClick={onClose}>
+            <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
+            <span>My Dashboard</span>
+          </NavLink>
+          <NavLink to="/attendance" className={navItem} onClick={onClose}>
+            <Clock className="w-4 h-4 flex-shrink-0" />
+            <span>Attendance</span>
+          </NavLink>
+          <NavLink to="/tasks" className={navItem} onClick={onClose}>
+            <CheckSquare className="w-4 h-4 flex-shrink-0" />
+            <span>Tasks &amp; Projects</span>
+          </NavLink>
+          <NavLink to="/messages" className={navItem} onClick={onClose}>
+            <MessageSquare className="w-4 h-4 flex-shrink-0" />
+            <span>Messages</span>
+          </NavLink>
+          <NavLink to="/notifications" className={navItem} onClick={onClose}>
+            <Bell className="w-4 h-4 flex-shrink-0" />
+            <span>Notifications</span>
+          </NavLink>
+          <NavLink to="/resources" className={navItem} onClick={onClose}>
+            <BookOpen className="w-4 h-4 flex-shrink-0" />
+            <span>Company Resources</span>
+          </NavLink>
+
+          <div className="pt-3">
+            <button
+              type="button"
+              onClick={() => setDeptExpanded(!deptExpanded)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 hover:text-slate-400"
+            >
+              <span>Departments</span>
+              {deptExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            </button>
+            {deptExpanded && (
+              <div className="mt-1 space-y-0.5">
+                {isHR && (
+                  <NavLink to="/hr" className={deptItem} onClick={onClose}>
+                    <div className="p-1 rounded bg-blue-500/15 flex-shrink-0">
+                      <Users className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                    <span>HR</span>
+                  </NavLink>
+                )}
+                {isFinance && (
+                  <NavLink to="/finance" className={deptItem} onClick={onClose}>
+                    <div className="p-1 rounded bg-emerald-500/15 flex-shrink-0">
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                    </div>
+                    <span>Finance</span>
+                  </NavLink>
+                )}
+                {isAdmin && (
+                  <NavLink to="/admin" className={deptItem} onClick={onClose}>
+                    <div className="p-1 rounded bg-violet-500/15 flex-shrink-0">
+                      <Shield className="w-3.5 h-3.5 text-violet-400" />
+                    </div>
+                    <span>Administration</span>
+                  </NavLink>
+                )}
+                <NavLink to="/projects" className={deptItem} onClick={onClose}>
+                  <div className="p-1 rounded bg-orange-500/15 flex-shrink-0">
+                    <Rocket className="w-3.5 h-3.5 text-orange-400" />
+                  </div>
+                  <span>Projects &amp; Operations</span>
+                </NavLink>
+              </div>
+            )}
           </div>
-          <div className="text-[11px] text-slate-400">
-            Active: <strong className="text-slate-200">{user?.roles?.[0] || 'Team Member'}</strong>
+
+          <div className="pt-3 space-y-0.5">
+            <div className="px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-500">Settings</div>
+            <NavLink to="/profile" className={navItem} onClick={onClose}>
+              <User className="w-4 h-4 flex-shrink-0" />
+              <span>Profile</span>
+            </NavLink>
+            <NavLink to="/work-mode" className={navItem} onClick={onClose}>
+              <Settings className="w-4 h-4 flex-shrink-0" />
+              <span>Preferences</span>
+            </NavLink>
+            <NavLink to="/help" className={navItem} onClick={onClose}>
+              <HelpCircle className="w-4 h-4 flex-shrink-0" />
+              <span>Help &amp; Support</span>
+            </NavLink>
+            <button
+              type="button"
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-300 hover:bg-red-500/10"
+            >
+              <LogOut className="w-4 h-4 flex-shrink-0" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </nav>
+
+        <div className="flex-shrink-0 px-3 py-3 border-t border-slate-800/60 bg-slate-950/40">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+              {user?.profile?.firstName?.[0] || user?.email?.[0] || 'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-white truncate">
+                {user?.profile?.displayName || `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() || user?.email}
+              </div>
+              <div className="text-[10px] text-slate-400 truncate">{user?.roles?.[0] || 'Employee'}</div>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

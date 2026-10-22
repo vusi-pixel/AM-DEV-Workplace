@@ -3,6 +3,34 @@ const employeeService = require('../services/employee.service');
 const response = require('../utils/response');
 const { parsePagination } = require('../utils/helpers');
 
+const directory = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = parsePagination(req.query);
+    const { search } = req.query;
+    const { users, total } = await employeeService.listEmployees({ skip, limit, search, status: 'active' });
+    const directory = users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      roles: (u.userRoles || []).map((ur) => ur.role?.name).filter(Boolean),
+      profile: u.profile
+        ? {
+            firstName: u.profile.firstName,
+            lastName: u.profile.lastName,
+            displayName: u.profile.displayName,
+            jobTitle: u.profile.jobTitle,
+            employeeId: u.profile.employeeId,
+            department: u.profile.department,
+            workArrangement: u.profile.workArrangement,
+            avatarUrl: u.profile.avatarUrl,
+          }
+        : null,
+    }));
+    return response.paginated(res, { data: directory, total, page, limit });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const list = async (req, res, next) => {
   try {
     const { page, limit, skip } = parsePagination(req.query);
@@ -50,4 +78,4 @@ const updateStatus = async (req, res, next) => {
   }
 };
 
-module.exports = { list, getOne, create, update, updateStatus };
+module.exports = { list, directory, getOne, create, update, updateStatus };

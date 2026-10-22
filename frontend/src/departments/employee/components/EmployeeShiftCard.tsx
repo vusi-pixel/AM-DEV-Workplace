@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { Clock, LogIn, LogOut, Building2, Laptop, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 import api from '../../../services/api';
+import { FlipClock } from '../../../components/common/FlipClock';
 
 export const EmployeeShiftCard: React.FC = () => {
-  const { user, attendanceStatus, refreshAttendance } = useAuth();
+  const { user, attendanceStatus, refreshAttendance, clockOut } = useAuth();
   const [elapsed, setElapsed] = useState<string>('00:00:00');
   const [loading, setLoading] = useState<boolean>(false);
   const [method, setMethod] = useState<'ON_SITE' | 'REMOTE'>(
@@ -55,17 +56,13 @@ export const EmployeeShiftCard: React.FC = () => {
   };
 
   const handlePunchOut = async () => {
-    if (!confirm('Confirm shift clock-out?')) return;
+    if (!confirm('Confirm shift clock-out? You will be automatically signed out.')) return;
     setLoading(true);
     setFeedback(null);
     try {
-      await api.post('/attendance/clock-out', { method, notes: notes || undefined });
-      setFeedback({ type: 'success', msg: 'Shift clock-out recorded. Great work today!' });
-      setNotes('');
-      await refreshAttendance();
+      await clockOut({ method, notes: notes || undefined });
     } catch (err: any) {
       setFeedback({ type: 'error', msg: err.message || 'Clock-out failed' });
-    } finally {
       setLoading(false);
     }
   };
@@ -104,13 +101,16 @@ export const EmployeeShiftCard: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-baseline gap-3">
-            <div className="text-4xl lg:text-5xl font-mono font-extrabold text-white tracking-wider">
-              {isClockedIn ? elapsed : '00:00:00'}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <FlipClock size="sm" showSeconds={true} showDate={false} allowExpand={true} />
+            <div>
+              <div className="text-2xl lg:text-3xl font-mono font-extrabold text-white tracking-wider">
+                {isClockedIn ? elapsed : '00:00:00'}
+              </div>
+              <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+                {isClockedIn ? 'Hours Elapsed' : 'Shift Duration'}
+              </span>
             </div>
-            <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
-              {isClockedIn ? 'Hours Elapsed' : 'Shift Duration'}
-            </span>
           </div>
 
           <p className="text-xs text-slate-400">

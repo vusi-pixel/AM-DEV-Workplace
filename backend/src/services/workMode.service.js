@@ -109,6 +109,9 @@ const approveRequest = async (requestId, reviewedById, comments) => {
   if (request.status !== 'PENDING') {
     throw new ConflictError('This request has already been reviewed.');
   }
+  if (request.employeeId === reviewedById) {
+    throw new AuthorizationError('You cannot approve your own work-mode request.');
+  }
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.workModeRequest.update({
@@ -162,6 +165,9 @@ const rejectRequest = async (requestId, reviewedById, comments) => {
   const request = await prisma.workModeRequest.findUnique({ where: { id: requestId } });
   if (!request) throw new NotFoundError('Work mode request');
   if (request.status !== 'PENDING') throw new ConflictError('This request has already been reviewed.');
+  if (request.employeeId === reviewedById) {
+    throw new AuthorizationError('You cannot reject your own work-mode request.');
+  }
 
   return prisma.$transaction(async (tx) => {
     const updated = await tx.workModeRequest.update({

@@ -64,6 +64,13 @@ export const Login: React.FC = () => {
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
         <div className="bg-slate-900/90 border border-slate-800/90 py-7 px-6 sm:px-10 shadow-2xl rounded-2xl backdrop-blur-xl">
+          {new URLSearchParams(window.location.search).get('signed_out') === 'clock_out' && (
+            <div className="mb-4 p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>Shift ended &amp; clocked out. You have been automatically signed out.</span>
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />

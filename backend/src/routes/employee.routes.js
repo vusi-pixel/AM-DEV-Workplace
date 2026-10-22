@@ -9,6 +9,7 @@ const { createEmployeeSchema, updateEmployeeSchema, updateStatusSchema } = requi
 const router = express.Router();
 router.use(requireAuth);
 
+router.get('/directory', employeeController.directory);
 router.get('/', requirePermission('employees.read'), employeeController.list);
 router.get('/:id', requireSelfOrPermission('employees.read'), employeeController.getOne);
 router.post('/', requirePermission('employees.create'), validateBody(createEmployeeSchema), employeeController.create);

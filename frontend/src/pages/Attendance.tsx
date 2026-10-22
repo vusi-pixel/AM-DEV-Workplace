@@ -6,9 +6,10 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { AttendanceSession } from '../types';
+import { FlipClock } from '../components/common/FlipClock';
 
 export const Attendance: React.FC = () => {
-  const { user, attendanceStatus, refreshAttendance, hasPermission } = useAuth();
+  const { user, attendanceStatus, refreshAttendance, hasPermission, clockOut } = useAuth();
 
   const [history, setHistory] = useState<AttendanceSession[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -74,16 +75,12 @@ export const Attendance: React.FC = () => {
     setActionError(null);
     setActionSuccess(null);
     try {
-      await api.post('/attendance/clock-out', {
+      await clockOut({
         method,
         notes: notes || undefined,
       });
-      setActionSuccess('Successfully clocked out. Shift completed.');
-      setNotes('');
-      await refreshAttendance();
     } catch (err: any) {
       setActionError(err.message || 'Failed to clock out');
-    } finally {
       setLoading(false);
     }
   };
@@ -140,19 +137,14 @@ export const Attendance: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Clock In / Out Action Panel */}
         <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-3">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Shift Console</span>
               <h2 className="text-xl font-bold text-white mt-0.5">
                 {isClockedIn ? 'Active Shift in Progress' : 'Start Your Work Day'}
               </h2>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`w-3 h-3 rounded-full ${isClockedIn ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`} />
-              <span className="text-xs font-semibold text-slate-300">
-                {isClockedIn ? 'Session Live' : 'Idle'}
-              </span>
-            </div>
+            <FlipClock size="sm" showSeconds={true} showDate={false} allowExpand={true} />
           </div>
 
           {/* Method Selection */}

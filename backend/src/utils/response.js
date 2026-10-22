@@ -32,4 +32,6 @@ const error = (res, message = 'An error occurred', statusCode = 500, errors = nu
   return res.status(statusCode).json(body);
 };
 
-module.exports = { success, paginated, error };
+const notFound = (res, message = 'Not found') => error(res, message, 404);
+
+module.exports = { success, paginated, error, notFound };

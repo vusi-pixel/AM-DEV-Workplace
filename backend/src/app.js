@@ -175,6 +175,7 @@ app.get('/health', (req, res) => {
 
 const financeRoutes = require('./routes/finance.routes');
 const frontdeskRoutes = require('./routes/frontdesk.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 // ─── API v1 routes ────────────────────────────────────────────────────────────
 const apiV1 = express.Router();
@@ -188,6 +189,7 @@ apiV1.use('/finance', financeRoutes);
 apiV1.use('/frontdesk', frontdeskRoutes);
 apiV1.use('/admin', adminRoutes);
 apiV1.use('/notifications', notificationRoutes);
+apiV1.use('/dashboard', dashboardRoutes);
 
 app.use('/api/v1', apiV1);
 

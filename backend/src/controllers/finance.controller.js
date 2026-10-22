@@ -67,7 +67,12 @@ const getPayrollHours = async (req, res, next) => {
 
 const getExpenses = async (req, res, next) => {
   try {
-    return response.success(res, expenseClaims);
+    const perms = req.user.permissions || [];
+    const canReview = perms.includes('finance.expenses.approve') || perms.includes('finance.read') || (req.user.roles || []).includes('System Administrator');
+    const list = canReview
+      ? expenseClaims
+      : expenseClaims.filter((e) => e.userId === req.user.id);
+    return response.success(res, list);
   } catch (err) {
     next(err);
   }
@@ -104,6 +109,9 @@ const approveExpense = async (req, res, next) => {
     const { id } = req.params;
     const claim = expenseClaims.find(e => e.id === id);
     if (!claim) return response.notFound(res, 'Expense claim not found');
+    if (claim.userId === req.user.id) {
+      return response.error(res, 'You cannot approve your own expense claim', 403);
+    }
 
     claim.status = 'APPROVED';
     claim.reviewedBy = req.user.profile?.displayName || req.user.email;
@@ -121,6 +129,9 @@ const rejectExpense = async (req, res, next) => {
     const { reason } = req.body;
     const claim = expenseClaims.find(e => e.id === id);
     if (!claim) return response.notFound(res, 'Expense claim not found');
+    if (claim.userId === req.user.id) {
+      return response.error(res, 'You cannot reject your own expense claim', 403);
+    }
 
     claim.status = 'REJECTED';
     claim.rejectionReason = reason || 'Non-compliant expense under corporate policy';
