@@ -173,6 +173,9 @@ app.get('/health', (req, res) => {
   });
 });
 
+const financeRoutes = require('./routes/finance.routes');
+const frontdeskRoutes = require('./routes/frontdesk.routes');
+
 // ─── API v1 routes ────────────────────────────────────────────────────────────
 const apiV1 = express.Router();
 
@@ -181,6 +184,8 @@ apiV1.use('/attendance', attendanceRoutes);
 apiV1.use('/employees', employeeRoutes);
 apiV1.use('/work-mode-requests', workModeRoutes);
 apiV1.use('/hr', hrRoutes);
+apiV1.use('/finance', financeRoutes);
+apiV1.use('/frontdesk', frontdeskRoutes);
 apiV1.use('/admin', adminRoutes);
 apiV1.use('/notifications', notificationRoutes);
 

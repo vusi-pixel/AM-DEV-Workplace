@@ -118,6 +118,87 @@ export interface AuditLog {
   actor?: { email: string; profile: Pick<EmployeeProfile, 'firstName' | 'lastName'> | null };
 }
 
+// ─── Finance Types ────────────────────────────────────────────────────────────
+export interface ExpenseClaim {
+  id: string;
+  userId: string;
+  userEmail: string;
+  employeeName: string;
+  category: string;
+  amount: number;
+  merchant: string;
+  expenseDate: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID';
+  receiptUrl: string;
+  justification: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  rejectionReason?: string;
+  createdAt: string;
+}
+
+export interface DepartmentBudget {
+  department: string;
+  totalBudget: number;
+  spent: number;
+  committed: number;
+  currency: string;
+  fiscalYear: number;
+}
+
+export interface PayrollRecord {
+  userId: string;
+  employeeId?: string;
+  name: string;
+  email: string;
+  department: string;
+  jobTitle?: string;
+  hourlyRate: number;
+  regularHours: number;
+  overtimeHours: number;
+  totalHours: number;
+  grossPay: number;
+  paymentStatus: string;
+  missedPunches: number;
+}
+
+// ─── Front Desk Types ─────────────────────────────────────────────────────────
+export interface VisitorRecord {
+  id: string;
+  fullName: string;
+  company: string;
+  hostEmployee: string;
+  hostEmail?: string;
+  badgeNumber: string;
+  purpose: string;
+  checkInTime: string;
+  checkOutTime: string | null;
+  status: 'ACTIVE_IN_BUILDING' | 'CHECKED_OUT';
+  idVerified: boolean;
+}
+
+export interface DeliveryRecord {
+  id: string;
+  carrier: string;
+  trackingNumber: string;
+  recipientEmail: string;
+  recipientName: string;
+  packageType: string;
+  arrivedAt: string;
+  collectedAt: string | null;
+  status: 'READY_FOR_PICKUP' | 'COLLECTED';
+  receivedBy: string;
+}
+
+export interface MusterPerson {
+  type: 'STAFF' | 'VISITOR';
+  name: string;
+  identifier: string;
+  department: string;
+  location: string;
+  admittedAt: string;
+}
+
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];

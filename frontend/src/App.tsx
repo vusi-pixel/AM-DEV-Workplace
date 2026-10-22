@@ -12,6 +12,12 @@ import { Directory } from './pages/Directory';
 import { Workspaces } from './pages/Workspaces';
 import { Admin } from './pages/Admin';
 
+// Department Modular Interfaces
+import { EmployeePortal } from './departments/employee/pages/EmployeePortal';
+import { HrPortal } from './departments/hr/pages/HrPortal';
+import { FinancePortal } from './departments/finance/pages/FinancePortal';
+import { FrontDeskPortal } from './departments/frontdesk/pages/FrontDeskPortal';
+
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -24,23 +30,23 @@ export const App: React.FC = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<Dashboard />} />
+              
+              {/* Dedicated Department Interfaces */}
+              <Route path="/employee" element={<EmployeePortal />} />
+              <Route path="/hr" element={<HrPortal />} />
+              <Route path="/hr-portal" element={<HrPortal />} />
+              <Route path="/finance" element={<FinancePortal />} />
+              <Route path="/front-desk" element={<FrontDeskPortal />} />
+
+              {/* Operations & Workspaces */}
               <Route path="/workspaces" element={<Workspaces />} />
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/work-mode" element={<WorkMode />} />
               <Route path="/leave" element={<LeaveManagement />} />
               <Route path="/directory" element={<Directory />} />
 
-              {/* HR specific portal */}
-              <Route
-                path="/hr-portal"
-                element={<LeaveManagement />}
-              />
-
               {/* Admin specific portal */}
-              <Route
-                path="/admin"
-                element={<Admin />}
-              />
+              <Route path="/admin" element={<Admin />} />
             </Route>
           </Route>
 

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Layers, ShieldCheck, UserCheck, ArrowRight, Lock, Mail, Sparkles, Building2, Laptop } from 'lucide-react';
+import { 
+  Layers, ShieldCheck, UserCheck, ArrowRight, Lock, Mail, 
+  Sparkles, Building2, Laptop, DollarSign, ScanLine 
+} from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
@@ -26,14 +29,14 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = async (quickEmail: string, quickPass: string) => {
+  const handleQuickLogin = async (quickEmail: string, quickPass: string, redirectPath: string = '/') => {
     setEmail(quickEmail);
     setPassword(quickPass);
     setError(null);
     setLoading(true);
     try {
       await login(quickEmail, quickPass);
-      navigate('/');
+      navigate(redirectPath);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
@@ -42,7 +45,7 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-10 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Background ambient lighting */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -54,15 +57,15 @@ export const Login: React.FC = () => {
         <h1 className="text-3xl font-extrabold text-white tracking-tight">
           AM DEV <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">PRO</span>
         </h1>
-        <p className="mt-1.5 text-sm text-slate-400">
-          Enterprise Corporate Operations & Workplace Platform
+        <p className="mt-1 text-xs text-slate-400">
+          Modular Enterprise Workplace: Worker, HR, Finance & Front Desk Portals
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
-        <div className="bg-slate-900/90 border border-slate-800/90 py-8 px-6 sm:px-10 shadow-2xl rounded-2xl backdrop-blur-xl">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md relative z-10 px-4">
+        <div className="bg-slate-900/90 border border-slate-800/90 py-7 px-6 sm:px-10 shadow-2xl rounded-2xl backdrop-blur-xl">
           {error && (
-            <div className="mb-5 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+            <div className="mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
               {error}
             </div>
@@ -70,7 +73,7 @@ export const Login: React.FC = () => {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Corporate Email Address
               </label>
               <div className="relative">
@@ -87,7 +90,7 @@ export const Login: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -111,84 +114,104 @@ export const Login: React.FC = () => {
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Signing In...</span>
+                  <span>Authenticating...</span>
                 </>
               ) : (
                 <>
-                  <span>Sign In to Workplace</span>
+                  <span>Sign In to AM DEV Workplace</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Quick Demo Switcher */}
-          <div className="mt-8 pt-6 border-t border-slate-800/80">
-            <div className="flex items-center gap-1.5 mb-3 text-slate-400">
+          {/* Quick Demo Switcher per Department */}
+          <div className="mt-6 pt-5 border-t border-slate-800/80">
+            <div className="flex items-center gap-1.5 mb-2.5 text-slate-400">
               <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                1-Click Demo Accounts
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
+                1-Click Department Demo Accounts
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-2 text-xs">
+            <div className="grid grid-cols-1 gap-1.5 text-xs">
+              {/* Employee */}
               <button
                 type="button"
-                onClick={() => handleQuickLogin('admin@amdev.com', 'Admin123!')}
+                onClick={() => handleQuickLogin('employee@amdev.com', 'Admin123!', '/employee')}
                 className="p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 flex items-center justify-between text-left group transition-all"
               >
                 <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-rose-400" />
+                  <Laptop className="w-4 h-4 text-blue-400" />
                   <div>
-                    <span className="font-medium text-slate-200">System Admin</span>
-                    <span className="text-[10px] text-slate-400 block">admin@amdev.com</span>
+                    <span className="font-semibold text-slate-200">Worker / Employee Portal</span>
+                    <span className="text-[10px] text-slate-400 block">employee@amdev.com • Shift Clock-In & Self-Service</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-blue-400 group-hover:translate-x-0.5 transition-transform">Login →</span>
+                <span className="text-[10px] text-blue-400 font-bold group-hover:translate-x-0.5 transition-transform">Enter →</span>
               </button>
 
+              {/* HR */}
               <button
                 type="button"
-                onClick={() => handleQuickLogin('hr@amdev.com', 'Admin123!')}
+                onClick={() => handleQuickLogin('hr@amdev.com', 'Admin123!', '/hr')}
                 className="p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 flex items-center justify-between text-left group transition-all"
               >
                 <div className="flex items-center gap-2.5">
                   <UserCheck className="w-4 h-4 text-emerald-400" />
                   <div>
-                    <span className="font-medium text-slate-200">HR Manager</span>
-                    <span className="text-[10px] text-slate-400 block">hr@amdev.com</span>
+                    <span className="font-semibold text-slate-200">HR Staff Dashboard</span>
+                    <span className="text-[10px] text-slate-400 block">hr@amdev.com • Live Roster, Leave & Hybrid Desk</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-blue-400 group-hover:translate-x-0.5 transition-transform">Login →</span>
+                <span className="text-[10px] text-emerald-400 font-bold group-hover:translate-x-0.5 transition-transform">Enter →</span>
               </button>
 
+              {/* Finance */}
               <button
                 type="button"
-                onClick={() => handleQuickLogin('hybrid.emp@amdev.com', 'Admin123!')}
+                onClick={() => handleQuickLogin('finance@amdev.com', 'Admin123!', '/finance')}
                 className="p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 flex items-center justify-between text-left group transition-all"
               >
                 <div className="flex items-center gap-2.5">
-                  <Laptop className="w-4 h-4 text-cyan-400" />
+                  <DollarSign className="w-4 h-4 text-amber-400" />
                   <div>
-                    <span className="font-medium text-slate-200">Hybrid Software Engineer</span>
-                    <span className="text-[10px] text-slate-400 block">hybrid.emp@amdev.com</span>
+                    <span className="font-semibold text-slate-200">Finance & Payroll Portal</span>
+                    <span className="text-[10px] text-slate-400 block">finance@amdev.com • Payroll Hours & Expense Audit</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-blue-400 group-hover:translate-x-0.5 transition-transform">Login →</span>
+                <span className="text-[10px] text-amber-400 font-bold group-hover:translate-x-0.5 transition-transform">Enter →</span>
               </button>
 
+              {/* Front Desk */}
               <button
                 type="button"
-                onClick={() => handleQuickLogin('employee@amdev.com', 'Admin123!')}
+                onClick={() => handleQuickLogin('frontdesk@amdev.com', 'Admin123!', '/front-desk')}
                 className="p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 flex items-center justify-between text-left group transition-all"
               >
                 <div className="flex items-center gap-2.5">
-                  <Building2 className="w-4 h-4 text-purple-400" />
+                  <ScanLine className="w-4 h-4 text-cyan-400" />
                   <div>
-                    <span className="font-medium text-slate-200">On-Site Developer</span>
-                    <span className="text-[10px] text-slate-400 block">employee@amdev.com</span>
+                    <span className="font-semibold text-slate-200">Front Desk & Security Kiosk</span>
+                    <span className="text-[10px] text-slate-400 block">frontdesk@amdev.com • Visitors, RFID & Muster Roll</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-blue-400 group-hover:translate-x-0.5 transition-transform">Login →</span>
+                <span className="text-[10px] text-cyan-400 font-bold group-hover:translate-x-0.5 transition-transform">Enter →</span>
+              </button>
+
+              {/* Admin */}
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('admin@amdev.com', 'Admin123!', '/admin')}
+                className="p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 flex items-center justify-between text-left group transition-all"
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-rose-400" />
+                  <div>
+                    <span className="font-semibold text-slate-200">System Administrator</span>
+                    <span className="text-[10px] text-slate-400 block">admin@amdev.com • Full Governance & Audit Trail</span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-rose-400 font-bold group-hover:translate-x-0.5 transition-transform">Enter →</span>
               </button>
             </div>
           </div>

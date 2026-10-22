@@ -85,18 +85,43 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Global Quick Search */}
-      <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
+      <div className="hidden xl:flex items-center flex-1 max-w-sm mx-6">
         <div className="relative w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search employees, documents, department portals..."
+            placeholder="Search workplace..."
             className="w-full pl-9 pr-4 py-1.5 bg-slate-800/60 border border-slate-700/60 rounded-lg text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
-            ⌘K
-          </kbd>
         </div>
+      </div>
+
+      {/* Quick Department Shortcuts */}
+      <div className="hidden md:flex items-center gap-1.5 bg-slate-800/40 border border-slate-700/50 p-1 rounded-xl">
+        <a
+          href="/employee"
+          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/60 transition-colors"
+        >
+          👷 Worker
+        </a>
+        <a
+          href="/hr"
+          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg text-slate-300 hover:text-emerald-300 hover:bg-emerald-950/40 transition-colors"
+        >
+          👥 HR
+        </a>
+        <a
+          href="/finance"
+          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg text-slate-300 hover:text-amber-300 hover:bg-amber-950/40 transition-colors"
+        >
+          💰 Finance
+        </a>
+        <a
+          href="/front-desk"
+          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg text-slate-300 hover:text-cyan-300 hover:bg-cyan-950/40 transition-colors"
+        >
+          🛎️ Front Desk
+        </a>
       </div>
 
       {/* Right Action Icons & Profile */}

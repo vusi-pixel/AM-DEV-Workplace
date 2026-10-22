@@ -5,8 +5,9 @@ const DEFAULT_HASH = bcrypt.hashSync('Admin123!', 10);
 
 const departments = [
   { id: 'dept-eng', name: 'Engineering', code: 'ENG', description: 'Core software engineering and architecture', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'dept-hr', name: 'Human Resources', code: 'HR', description: 'HR operations, talent and compliance', isActive: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'dept-fin', name: 'Finance', code: 'FIN', description: 'Financial planning, accounting and payroll', isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'dept-hr', name: 'Human Resources', code: 'HR', description: 'HR operations, talent, and workplace compliance', isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'dept-fin', name: 'Finance', code: 'FIN', description: 'Financial planning, accounting, expenses, and payroll', isActive: true, createdAt: new Date(), updatedAt: new Date() },
+  { id: 'dept-ops', name: 'Front Desk & Operations', code: 'OPS', description: 'Physical security, reception, and guest logistics', isActive: true, createdAt: new Date(), updatedAt: new Date() },
 ];
 
 const workSchedules = [
@@ -14,14 +15,24 @@ const workSchedules = [
 ];
 
 const permissionsList = [
+  // Attendance
   'attendance.read.self', 'attendance.read.department', 'attendance.read.all',
   'attendance.clock_in', 'attendance.clock_out', 'attendance.correct', 'attendance.bypass',
+  // Employees
   'employees.read', 'employees.create', 'employees.update', 'employees.deactivate',
-  'leave.request', 'leave.review', 'hybrid.request', 'hybrid.review',
-  'finance.read', 'finance.expenses.create', 'finance.expenses.approve',
+  // Leave
+  'leave.request', 'leave.review',
+  // Hybrid
+  'hybrid.request', 'hybrid.review',
+  // Finance
+  'finance.read', 'finance.payroll.view', 'finance.payroll.process', 'finance.expenses.create', 'finance.expenses.approve', 'finance.budgets.manage',
+  // Front Desk
+  'frontdesk.visitors.manage', 'frontdesk.kiosk.checkin', 'frontdesk.deliveries.manage', 'frontdesk.muster.view',
+  // Projects & Knowledge
   'projects.read', 'projects.manage', 'announcements.read', 'announcements.manage',
-  'documents.read', 'documents.manage', 'users.manage', 'roles.manage',
-  'audit.read', 'settings.manage',
+  'documents.read', 'documents.manage',
+  // Admin & System
+  'users.manage', 'roles.manage', 'audit.read', 'settings.manage',
 ];
 
 const allPermObjects = permissionsList.map((p, idx) => ({ id: `p-${idx + 1}`, key: p, module: p.split('.')[0], description: p }));
@@ -44,12 +55,30 @@ const roles = [
       .map(p => ({ roleId: 'role-hr', permissionId: p.id, permission: p })),
   },
   {
+    id: 'role-fin',
+    name: 'Finance Manager',
+    description: 'Corporate finance, expense auditing, and payroll processing',
+    isSystem: true,
+    rolePermissions: allPermObjects
+      .filter(p => p.key.startsWith('finance') || ['attendance.read.all', 'employees.read', 'documents.read'].includes(p.key))
+      .map(p => ({ roleId: 'role-fin', permissionId: p.id, permission: p })),
+  },
+  {
+    id: 'role-frontdesk',
+    name: 'Front Desk Officer',
+    description: 'Reception, visitor tracking, physical access terminal, and safety muster',
+    isSystem: true,
+    rolePermissions: allPermObjects
+      .filter(p => p.key.startsWith('frontdesk') || ['attendance.read.all', 'attendance.clock_in', 'employees.read'].includes(p.key))
+      .map(p => ({ roleId: 'role-frontdesk', permissionId: p.id, permission: p })),
+  },
+  {
     id: 'role-emp',
     name: 'Employee',
     description: 'Standard team member capabilities',
     isSystem: true,
     rolePermissions: allPermObjects
-      .filter(p => ['attendance.read.self', 'attendance.clock_in', 'attendance.clock_out', 'leave.request', 'hybrid.request', 'announcements.read', 'documents.read', 'projects.read'].includes(p.key))
+      .filter(p => ['attendance.read.self', 'attendance.clock_in', 'attendance.clock_out', 'leave.request', 'hybrid.request', 'finance.expenses.create', 'announcements.read', 'documents.read', 'projects.read'].includes(p.key))
       .map(p => ({ roleId: 'role-emp', permissionId: p.id, permission: p })),
   },
 ];
@@ -71,7 +100,7 @@ const users = [
       lastName: 'Administrator',
       displayName: 'System Admin',
       phone: '+1 (555) 010-0001',
-      jobTitle: 'VP of Technology & Infrastructure',
+      jobTitle: 'VP of Technology & Systems',
       workArrangement: 'ON_SITE',
       employmentStatus: 'ACTIVE',
       departmentId: 'dept-eng',
@@ -108,6 +137,58 @@ const users = [
     userRoles: [{ userId: 'usr-hr', roleId: 'role-hr', role: roles[1] }],
   },
   {
+    id: 'usr-fin',
+    email: 'finance@amdev.com',
+    passwordHash: DEFAULT_HASH,
+    isActive: true,
+    isFirstLogin: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    profile: {
+      id: 'prof-fin',
+      userId: 'usr-fin',
+      employeeId: 'EMP-005',
+      firstName: 'David',
+      lastName: 'Sterling',
+      displayName: 'David Sterling',
+      phone: '+1 (555) 010-0005',
+      jobTitle: 'Controller & Head of Finance',
+      workArrangement: 'ON_SITE',
+      employmentStatus: 'ACTIVE',
+      departmentId: 'dept-fin',
+      department: departments[2],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    userRoles: [{ userId: 'usr-fin', roleId: 'role-fin', role: roles[2] }],
+  },
+  {
+    id: 'usr-frontdesk',
+    email: 'frontdesk@amdev.com',
+    passwordHash: DEFAULT_HASH,
+    isActive: true,
+    isFirstLogin: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    profile: {
+      id: 'prof-frontdesk',
+      userId: 'usr-frontdesk',
+      employeeId: 'EMP-006',
+      firstName: 'Elena',
+      lastName: 'Rostova',
+      displayName: 'Elena Rostova',
+      phone: '+1 (555) 010-0006',
+      jobTitle: 'Operations & Front Desk Lead',
+      workArrangement: 'ON_SITE',
+      employmentStatus: 'ACTIVE',
+      departmentId: 'dept-ops',
+      department: departments[3],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    userRoles: [{ userId: 'usr-frontdesk', roleId: 'role-frontdesk', role: roles[3] }],
+  },
+  {
     id: 'usr-hybrid',
     email: 'hybrid.emp@amdev.com',
     passwordHash: DEFAULT_HASH,
@@ -131,7 +212,7 @@ const users = [
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    userRoles: [{ userId: 'usr-hybrid', roleId: 'role-emp', role: roles[2] }],
+    userRoles: [{ userId: 'usr-hybrid', roleId: 'role-emp', role: roles[4] }],
   },
   {
     id: 'usr-emp',
@@ -145,11 +226,11 @@ const users = [
       id: 'prof-emp',
       userId: 'usr-emp',
       employeeId: 'EMP-004',
-      firstName: 'David',
-      lastName: 'Sterling',
-      displayName: 'David Sterling',
+      firstName: 'Alex',
+      lastName: 'Rivers',
+      displayName: 'Alex Rivers',
       phone: '+1 (555) 010-0004',
-      jobTitle: 'Software Engineer II',
+      jobTitle: 'Junior Developer',
       workArrangement: 'ON_SITE',
       employmentStatus: 'ACTIVE',
       departmentId: 'dept-eng',
@@ -157,13 +238,72 @@ const users = [
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-    userRoles: [{ userId: 'usr-emp', roleId: 'role-emp', role: roles[2] }],
+    userRoles: [{ userId: 'usr-emp', roleId: 'role-emp', role: roles[4] }],
   },
 ];
 
-let attendanceSessions = [];
-let workModeRequests = [];
-let leaveRequests = [];
+let attendanceSessions = [
+  {
+    id: 'sess-seed-1',
+    userId: 'usr-admin',
+    workDate: new Date().toISOString().split('T')[0],
+    clockInAt: new Date(Date.now() - 14400000).toISOString(),
+    clockOutAt: null,
+    clockInMethod: 'ON_SITE',
+    clockOutMethod: null,
+    status: 'CLOCKED_IN',
+    durationMinutes: 240,
+    notes: 'Morning infrastructure security review',
+    createdAt: new Date(),
+  },
+  {
+    id: 'sess-seed-2',
+    userId: 'usr-frontdesk',
+    workDate: new Date().toISOString().split('T')[0],
+    clockInAt: new Date(Date.now() - 18000000).toISOString(),
+    clockOutAt: null,
+    clockInMethod: 'ON_SITE',
+    clockOutMethod: null,
+    status: 'CLOCKED_IN',
+    durationMinutes: 300,
+    notes: 'Front Desk opening shift',
+    createdAt: new Date(),
+  },
+];
+
+let workModeRequests = [
+  {
+    id: 'wm-1',
+    employeeId: 'usr-hybrid',
+    requestedArrangement: 'HYBRID',
+    reason: 'Sprint delivery remote Tuesdays and Thursdays for uninterrupted deep work.',
+    effectiveFrom: '2026-02-01',
+    effectiveTo: '2026-12-31',
+    status: 'APPROVED',
+    reviewedById: 'usr-hr',
+    reviewedAt: new Date().toISOString(),
+    reviewComments: 'Approved by People Ops in line with engineering hybrid quota.',
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    employee: { id: 'usr-hybrid', email: 'hybrid.emp@amdev.com', profile: users[4].profile },
+  },
+];
+
+let leaveRequests = [
+  {
+    id: 'leave-1',
+    employeeId: 'usr-emp',
+    leaveType: 'ANNUAL',
+    startDate: '2026-11-15',
+    endDate: '2026-11-18',
+    reason: 'Family wedding out of state.',
+    status: 'PENDING',
+    reviewedById: null,
+    reviewedAt: null,
+    reviewComments: null,
+    createdAt: new Date().toISOString(),
+  },
+];
+
 let notifications = [
   {
     id: 'notif-1',
@@ -186,6 +326,7 @@ let notifications = [
     createdAt: new Date(),
   },
 ];
+
 let auditLogs = [
   {
     id: 'audit-1',
@@ -202,6 +343,135 @@ let auditLogs = [
   },
 ];
 
+// ─── Finance specific data ────────────────────────────────────────────────────
+let expenseClaims = [
+  {
+    id: 'exp-101',
+    userId: 'usr-hybrid',
+    userEmail: 'hybrid.emp@amdev.com',
+    employeeName: 'Marcus Vance',
+    category: 'Hardware & Ergonomics',
+    amount: 289.50,
+    merchant: 'Keychron Keyboards',
+    expenseDate: '2026-10-14',
+    status: 'APPROVED',
+    receiptUrl: 'receipt_keychron_mech.pdf',
+    justification: 'Ergonomic dual-host mechanical keyboard for remote workstation setup',
+    reviewedBy: 'David Sterling',
+    reviewedAt: '2026-10-16T11:20:00Z',
+    createdAt: new Date(Date.now() - 500000000).toISOString(),
+  },
+  {
+    id: 'exp-102',
+    userId: 'usr-emp',
+    userEmail: 'employee@amdev.com',
+    employeeName: 'Alex Rivers',
+    category: 'Software Subscription',
+    amount: 149.00,
+    merchant: 'JetBrains Annual IDE License',
+    expenseDate: '2026-10-18',
+    status: 'PENDING',
+    receiptUrl: 'jetbrains_invoice_2026.pdf',
+    justification: 'Annual WebStorm & DataGrip IDE suite for backend typescript services',
+    reviewedBy: null,
+    reviewedAt: null,
+    createdAt: new Date(Date.now() - 200000000).toISOString(),
+  },
+  {
+    id: 'exp-103',
+    userId: 'usr-admin',
+    userEmail: 'admin@amdev.com',
+    employeeName: 'System Administrator',
+    category: 'Cloud Infrastructure',
+    amount: 1250.00,
+    merchant: 'AWS Cloud Services',
+    expenseDate: '2026-10-01',
+    status: 'APPROVED',
+    receiptUrl: 'aws_october_statement.pdf',
+    justification: 'Monthly cluster compute & RDS multi-region redundancy billing',
+    reviewedBy: 'David Sterling',
+    reviewedAt: '2026-10-05T09:15:00Z',
+    createdAt: new Date(Date.now() - 1000000000).toISOString(),
+  },
+];
+
+let departmentBudgets = [
+  { department: 'Engineering', totalBudget: 450000, spent: 312000, committed: 48000, currency: 'USD', fiscalYear: 2026 },
+  { department: 'Human Resources', totalBudget: 120000, spent: 78500, committed: 12500, currency: 'USD', fiscalYear: 2026 },
+  { department: 'Finance & Legal', totalBudget: 95000, spent: 54000, committed: 8200, currency: 'USD', fiscalYear: 2026 },
+  { department: 'Front Desk & Operations', totalBudget: 85000, spent: 49200, committed: 6500, currency: 'USD', fiscalYear: 2026 },
+];
+
+// ─── Front Desk specific data ─────────────────────────────────────────────────
+let visitors = [
+  {
+    id: 'vis-1',
+    fullName: 'Sophia Martinez',
+    company: 'Stripe Security Audit',
+    hostEmployee: 'Marcus Vance',
+    hostEmail: 'hybrid.emp@amdev.com',
+    badgeNumber: 'GUEST-042',
+    purpose: 'PCI-DSS Compliance Assessment',
+    checkInTime: new Date(Date.now() - 7200000).toISOString(),
+    checkOutTime: null,
+    status: 'ACTIVE_IN_BUILDING',
+    idVerified: true,
+  },
+  {
+    id: 'vis-2',
+    fullName: 'Liam Chen',
+    company: 'Cisco Systems',
+    hostEmployee: 'System Administrator',
+    hostEmail: 'admin@amdev.com',
+    badgeNumber: 'VENDOR-019',
+    purpose: 'Fiber Gateway Hardware Maintenance',
+    checkInTime: new Date(Date.now() - 10800000).toISOString(),
+    checkOutTime: null,
+    status: 'ACTIVE_IN_BUILDING',
+    idVerified: true,
+  },
+  {
+    id: 'vis-3',
+    fullName: 'Emma Watson',
+    company: 'Candidate (Senior UX Designer)',
+    hostEmployee: 'Sarah Jenkins',
+    hostEmail: 'hr@amdev.com',
+    badgeNumber: 'GUEST-040',
+    purpose: 'Executive In-Person Final Interview',
+    checkInTime: new Date(Date.now() - 21600000).toISOString(),
+    checkOutTime: new Date(Date.now() - 14400000).toISOString(),
+    status: 'CHECKED_OUT',
+    idVerified: true,
+  },
+];
+
+let deliveries = [
+  {
+    id: 'del-1',
+    carrier: 'FedEx Express',
+    trackingNumber: 'FX-8492049182',
+    recipientEmail: 'hybrid.emp@amdev.com',
+    recipientName: 'Marcus Vance',
+    packageType: 'Hardware (Laptop Docking Station)',
+    arrivedAt: new Date(Date.now() - 3600000).toISOString(),
+    collectedAt: null,
+    status: 'READY_FOR_PICKUP',
+    receivedBy: 'Elena Rostova',
+  },
+  {
+    id: 'del-2',
+    carrier: 'DHL Priority',
+    trackingNumber: 'DHL-2918392109',
+    recipientEmail: 'hr@amdev.com',
+    recipientName: 'Sarah Jenkins',
+    packageType: 'Documents (Confidential Legal Contracts)',
+    arrivedAt: new Date(Date.now() - 14400000).toISOString(),
+    collectedAt: new Date(Date.now() - 7200000).toISOString(),
+    status: 'COLLECTED',
+    receivedBy: 'Elena Rostova',
+  },
+];
+
 function createMockPrisma() {
   return {
     $queryRaw: async () => [{ '?column?': 1 }],
@@ -214,7 +484,7 @@ function createMockPrisma() {
     $disconnect: async () => {},
 
     user: {
-      findUnique: async ({ where, include }) => {
+      findUnique: async ({ where }) => {
         let u = null;
         if (where.id) u = users.find(x => x.id === where.id);
         else if (where.email) u = users.find(x => x.email.toLowerCase() === where.email.toLowerCase());
@@ -225,9 +495,7 @@ function createMockPrisma() {
         if (where?.id) u = users.find(x => x.id === where.id);
         return u ? JSON.parse(JSON.stringify(u)) : null;
       },
-      findMany: async ({ where, include, skip, take }) => {
-        return JSON.parse(JSON.stringify(users));
-      },
+      findMany: async () => JSON.parse(JSON.stringify(users)),
       count: async () => users.length,
       update: async ({ where, data }) => {
         const u = users.find(x => x.id === where.id);
@@ -257,9 +525,7 @@ function createMockPrisma() {
         if (u?.profile) Object.assign(u.profile, data);
         return JSON.parse(JSON.stringify(u?.profile || {}));
       },
-      create: async ({ data }) => {
-        return { id: `prof-${Date.now()}`, ...data };
-      },
+      create: async ({ data }) => ({ id: `prof-${Date.now()}`, ...data }),
     },
 
     attendanceSession: {
@@ -396,12 +662,15 @@ function createMockPrisma() {
     },
 
     attendanceCorrectionRequest: {
-      create: async ({ data }) => {
-        return { id: `corr-${Date.now()}`, ...data, status: 'PENDING', createdAt: new Date() };
-      },
+      create: async ({ data }) => ({ id: `corr-${Date.now()}`, ...data, status: 'PENDING', createdAt: new Date() }),
     },
 
     notification: {
+      create: async ({ data }) => {
+        const n = { id: `notif-${Date.now()}`, isRead: false, readAt: null, createdAt: new Date(), ...data };
+        notifications.unshift(n);
+        return JSON.parse(JSON.stringify(n));
+      },
       findMany: async ({ where }) => {
         let list = notifications;
         if (where?.userId) list = list.filter(n => n.userId === where.userId);
@@ -428,15 +697,9 @@ function createMockPrisma() {
 
     auditLog: {
       create: async ({ data }) => {
-        const newLog = {
-          id: `audit-${Date.now()}`,
-          createdAt: new Date(),
-          ...data,
-        };
+        const newLog = { id: `audit-${Date.now()}`, createdAt: new Date(), ...data };
         const u = users.find(x => x.id === data.actorId);
-        if (u) {
-          newLog.actor = { email: u.email, profile: u.profile };
-        }
+        if (u) newLog.actor = { email: u.email, profile: u.profile };
         auditLogs.unshift(newLog);
         return JSON.parse(JSON.stringify(newLog));
       },
@@ -481,4 +744,8 @@ module.exports = {
   leaveRequests,
   auditLogs,
   notifications,
+  expenseClaims,
+  departmentBudgets,
+  visitors,
+  deliveries,
 };
