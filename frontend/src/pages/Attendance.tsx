@@ -1,66 +1,136 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Clock, CheckCircle2, AlertTriangle, LogIn, LogOut, Calendar, 
-  MapPin, Shield, History, PlusCircle, Laptop, Building2, HelpCircle 
+import {
+  Clock, CheckCircle2, AlertTriangle, LogIn, LogOut,
+  MapPin, Shield, History, PlusCircle, Laptop, Building2, Info, MoreHorizontal
 } from 'lucide-react';
 import api from '../services/api';
 import { AttendanceSession } from '../types';
-import { FlipClock } from '../components/common/FlipClock';
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDate(dateStr: string): string {
+  // dateStr is YYYY-MM-DD
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function fmtDuration(minutes: number | null | undefined, clockOutAt: string | null | undefined): string {
+  if (!clockOutAt) return 'In progress';
+  if (!minutes && minutes !== 0) return '—';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function fmtMethod(raw: string): string {
+  const map: Record<string, string> = { ON_SITE: 'On-site', REMOTE: 'Remote', HYBRID: 'Hybrid' };
+  return map[raw] ?? raw.replace(/_/g, ' ');
+}
+
+function fmtArrangement(raw: string): string {
+  const map: Record<string, string> = { ON_SITE: 'On-site', REMOTE: 'Remote', HYBRID: 'Hybrid' };
+  return map[raw] ?? raw;
+}
+
+function fmtStatus(raw: string): string {
+  const map: Record<string, string> = { CLOCKED_IN: 'Active', CLOCKED_OUT: 'Completed', PENDING: 'Pending' };
+  return map[raw] ?? raw.replace(/_/g, ' ');
+}
+
+// ─── Small components ─────────────────────────────────────────────────────────
+
+const LiveClock: React.FC = () => {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div>
+      <div
+        className="tabular font-semibold"
+        style={{ fontSize: 32, lineHeight: '40px', color: 'var(--color-text-primary)', letterSpacing: '-0.5px' }}
+      >
+        {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+      </div>
+      <div className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+        {now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+      </div>
+    </div>
+  );
+};
+
+interface BadgeProps { variant: 'success' | 'active' | 'warning' | 'neutral'; label: string; }
+const StatusBadge: React.FC<BadgeProps> = ({ variant, label }) => (
+  <span className={`badge badge-${variant === 'active' ? 'active' : variant === 'success' ? 'success' : variant === 'warning' ? 'warning' : 'neutral'}`}>
+    {label}
+  </span>
+);
+
+// ─── Skeleton rows ────────────────────────────────────────────────────────────
+const SkeletonRows: React.FC = () => (
+  <>
+    {[1, 2, 3].map(i => (
+      <tr key={i}>
+        {[1, 2, 3, 4, 5, 6, 7].map(j => (
+          <td key={j} className="px-4" style={{ height: 48 }}>
+            <div className="skeleton h-4 rounded" style={{ width: j === 7 ? 48 : '80%' }} />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export const Attendance: React.FC = () => {
   const { user, attendanceStatus, refreshAttendance, hasPermission, clockOut } = useAuth();
 
   const [history, setHistory] = useState<AttendanceSession[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [historyLoading, setHistoryLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [method, setMethod] = useState<'ON_SITE' | 'REMOTE'>(
-    user?.profile?.workArrangement === 'REMOTE' || user?.profile?.workArrangement === 'HYBRID' 
-      ? 'REMOTE' 
+    user?.profile?.workArrangement === 'REMOTE' || user?.profile?.workArrangement === 'HYBRID'
+      ? 'REMOTE'
       : 'ON_SITE'
   );
-  const [notes, setNotes] = useState<string>('');
+  const [notes, setNotes] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-
-  // Correction request state
-  const [showCorrectionModal, setShowCorrectionModal] = useState<boolean>(false);
-  const [selectedSessionId, setSelectedSessionId] = useState<string>('');
-  const [correctionReason, setCorrectionReason] = useState<string>('');
-  const [correctionProposedTime, setCorrectionProposedTime] = useState<string>('');
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState('');
+  const [correctionReason, setCorrectionReason] = useState('');
 
   const session = attendanceStatus?.session;
   const isClockedIn = !!(attendanceStatus?.hasActiveSession && session);
+  const arrangement = user?.profile?.workArrangement || 'ON_SITE';
 
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
       const res = await api.get<{ success: boolean; data: AttendanceSession[] }>('/attendance/me');
-      if (res.data?.success && res.data.data) {
-        setHistory(res.data.data);
-      }
+      if (res.data?.success && res.data.data) setHistory(res.data.data);
     } catch {
-      // Mock history if backend table is empty or error
       setHistory([]);
     } finally {
       setHistoryLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchHistory();
-  }, [attendanceStatus]);
+  useEffect(() => { fetchHistory(); }, [attendanceStatus]);
 
   const handleClockIn = async () => {
     setLoading(true);
     setActionError(null);
     setActionSuccess(null);
     try {
-      await api.post('/attendance/clock-in', {
-        method,
-        notes: notes || undefined,
-      });
-      setActionSuccess('Successfully clocked in. Shift timer is now recording.');
+      await api.post('/attendance/clock-in', { method, notes: notes || undefined });
+      setActionSuccess('Clocked in. Your shift timer is now running.');
       setNotes('');
       await refreshAttendance();
     } catch (err: any) {
@@ -75,10 +145,7 @@ export const Attendance: React.FC = () => {
     setActionError(null);
     setActionSuccess(null);
     try {
-      await clockOut({
-        method,
-        notes: notes || undefined,
-      });
+      await clockOut({ method, notes: notes || undefined });
     } catch (err: any) {
       setActionError(err.message || 'Failed to clock out');
       setLoading(false);
@@ -89,297 +156,284 @@ export const Attendance: React.FC = () => {
     e.preventDefault();
     if (!selectedSessionId) return;
     try {
-      await api.post(`/attendance/${selectedSessionId}/correction-requests`, {
-        reason: correctionReason,
-        proposedClockOutAt: correctionProposedTime,
-      });
+      await api.post(`/attendance/${selectedSessionId}/correction-requests`, { reason: correctionReason });
       alert('Correction request submitted to HR for review.');
       setShowCorrectionModal(false);
       setCorrectionReason('');
-      setCorrectionProposedTime('');
     } catch (err: any) {
       alert(err.message || 'Failed to submit correction');
     }
   };
 
-  const arrangement = user?.profile?.workArrangement || 'ON_SITE';
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-          <span>Shift Attendance & Time Enforcement</span>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-medium">
-            Policy v2.4
-          </span>
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Record your daily shift presence according to corporate HR policy. Remote clock-ins are validated against your hybrid privileges.
-        </p>
-      </div>
-
+      {/* Alerts */}
       {actionError && (
-        <div className="p-4 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+        <div className="alert alert-danger" role="alert">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{actionError}</span>
         </div>
       )}
-
       {actionSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <div className="alert alert-success" role="status">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>{actionSuccess}</span>
         </div>
       )}
 
-      {/* Main Console Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Clock In / Out Action Panel */}
-        <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-3">
+      {/* ── Two-column grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+        {/* ── Left: Clock-in / out panel ── */}
+        <div className="lg:col-span-2 card space-y-6">
+          {/* Clock */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+            style={{ paddingBottom: 24, borderBottom: '1px solid var(--color-border)' }}>
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Shift Console</span>
-              <h2 className="text-xl font-bold text-white mt-0.5">
-                {isClockedIn ? 'Active Shift in Progress' : 'Start Your Work Day'}
+              <p className="text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Shift console</p>
+              <h2 className="text-base font-semibold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>
+                {isClockedIn ? 'Active shift in progress' : 'Start your work day'}
               </h2>
             </div>
-            <FlipClock size="sm" showSeconds={true} showDate={false} allowExpand={true} />
+            <LiveClock />
           </div>
 
-          {/* Method Selection */}
-          <div className="space-y-3">
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-              Verification Mode
-            </label>
-            <div className="grid grid-cols-2 gap-3">
+          {/* Verification mode */}
+          <div>
+            <label className="form-label">Verification mode</label>
+            <div className="grid grid-cols-2 gap-3 mt-1.5">
               <button
                 type="button"
                 onClick={() => setMethod('ON_SITE')}
-                className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all text-left ${
-                  method === 'ON_SITE'
-                    ? 'bg-blue-600/15 border-blue-500 text-white'
-                    : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:text-slate-200'
-                }`}
+                className={`seg-option${method === 'ON_SITE' ? ' selected' : ''}`}
+                aria-pressed={method === 'ON_SITE'}
               >
-                <div className={`p-2 rounded-lg ${method === 'ON_SITE' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                  <Building2 className="w-4 h-4" />
-                </div>
+                <Building2
+                  className="w-5 h-5 flex-shrink-0"
+                  style={{ color: method === 'ON_SITE' ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                />
                 <div>
-                  <div className="text-xs font-bold text-slate-200">On-Site / Office</div>
-                  <div className="text-[10px] text-slate-400">AM DEV HQ Geofence</div>
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>On-site</div>
+                  <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>AM DEV HQ</div>
                 </div>
               </button>
-
               <button
                 type="button"
                 onClick={() => setMethod('REMOTE')}
-                className={`p-3.5 rounded-xl border flex items-center gap-3 transition-all text-left ${
-                  method === 'REMOTE'
-                    ? 'bg-blue-600/15 border-blue-500 text-white'
-                    : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:text-slate-200'
-                }`}
+                className={`seg-option${method === 'REMOTE' ? ' selected' : ''}`}
+                aria-pressed={method === 'REMOTE'}
               >
-                <div className={`p-2 rounded-lg ${method === 'REMOTE' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                  <Laptop className="w-4 h-4" />
-                </div>
+                <Laptop
+                  className="w-5 h-5 flex-shrink-0"
+                  style={{ color: method === 'REMOTE' ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                />
                 <div>
-                  <div className="text-xs font-bold text-slate-200">Remote / Field</div>
-                  <div className="text-[10px] text-slate-400">Hybrid Policy Approved</div>
+                  <div className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>Remote</div>
+                  <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Hybrid policy</div>
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Notes input */}
+          {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Shift Focus / Notes (Optional)
-            </label>
+            <label htmlFor="shift-notes" className="form-label">Shift focus</label>
             <input
+              id="shift-notes"
               type="text"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Core sprint development, client sync, code review"
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={e => setNotes(e.target.value)}
+              placeholder="e.g. Sprint development, client sync…"
+              className="form-input"
             />
+            <p className="form-helper">Optional — helps track what you worked on</p>
           </div>
 
-          {/* Action Trigger */}
-          <div className="pt-2">
-            {!isClockedIn ? (
-              <button
-                onClick={handleClockIn}
-                disabled={loading}
-                className="w-full py-3.5 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2 text-sm transition-all disabled:opacity-50"
-              >
-                <LogIn className="w-5 h-5" />
-                <span>{loading ? 'Recording Clock-In...' : 'Record Shift Clock-In'}</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleClockOut}
-                disabled={loading}
-                className="w-full py-3.5 px-6 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold rounded-xl shadow-lg shadow-rose-900/40 flex items-center justify-center gap-2 text-sm transition-all disabled:opacity-50"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>{loading ? 'Recording Clock-Out...' : 'Complete Shift & Clock Out'}</span>
-              </button>
-            )}
-          </div>
+          {/* Action button */}
+          {!isClockedIn ? (
+            <button
+              onClick={handleClockIn}
+              disabled={loading}
+              className="btn btn-primary w-full"
+            >
+              {loading
+                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /><span>Clocking in…</span></>
+                : <><LogIn className="w-4 h-4" /><span>Clock in</span></>
+              }
+            </button>
+          ) : (
+            <button
+              onClick={handleClockOut}
+              disabled={loading}
+              className="btn btn-danger w-full"
+            >
+              {loading
+                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /><span>Clocking out…</span></>
+                : <><LogOut className="w-4 h-4" /><span>Complete shift & clock out</span></>
+              }
+            </button>
+          )}
         </div>
 
-        {/* Policy & Work Schedule Summary */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Shift Schedule & Policy</h2>
+        {/* ── Right: Policy card ── */}
+        <div className="card space-y-0">
+          <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--color-text-primary)' }}>
+            Schedule & policy
+          </h2>
 
-          <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Standard Schedule:</span>
-              <span className="font-semibold text-slate-200">Mon - Fri (09:00 - 18:00)</span>
+          <dl>
+            <div className="dl-row">
+              <span className="dl-label">Standard hours</span>
+              <span className="dl-value tabular">Mon – Fri, 09:00–18:00</span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Expected Duration:</span>
-              <span className="font-semibold text-slate-200">8.0 hrs / day</span>
+            <div className="dl-row">
+              <span className="dl-label">Expected daily</span>
+              <span className="dl-value tabular">8 h</span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Grace Period:</span>
-              <span className="font-semibold text-emerald-400">15 minutes</span>
+            <div className="dl-row">
+              <span className="dl-label">Grace period</span>
+              <span className="dl-value" style={{ color: 'var(--color-success)' }}>15 min</span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Arrangement:</span>
-              <span className="font-semibold text-blue-400 uppercase">{arrangement}</span>
+            <div className="dl-row">
+              <span className="dl-label">Arrangement</span>
+              <span className="dl-value">{fmtArrangement(arrangement)}</span>
             </div>
-          </div>
+          </dl>
 
-          <div className="p-3.5 rounded-xl bg-blue-950/20 border border-blue-500/20 text-xs space-y-2">
-            <div className="flex items-center gap-2 text-blue-400 font-semibold">
-              <Shield className="w-4 h-4" />
-              <span>Attendance Enforcement</span>
-            </div>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
-              Access to department workspaces and engineering repos requires an active clocked-in session for security tracking.
+          {/* Enforcement notice */}
+          <div className="alert alert-info mt-4" style={{ padding: '10px 12px' }}>
+            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="text-sm leading-snug">
+              Active sessions are required for workspace and repo access. Remote clock-ins are validated against your approved arrangement.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Attendance History Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex items-center justify-between">
+      {/* ── Attendance log ── */}
+      <div className="card" style={{ padding: 0 }}>
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: '1px solid var(--color-border)' }}
+        >
           <div className="flex items-center gap-2.5">
-            <History className="w-5 h-5 text-blue-400" />
-            <h2 className="text-base font-bold text-white">Attendance Log (Recent Sessions)</h2>
+            <History className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} aria-hidden="true" />
+            <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              Attendance log
+            </h2>
           </div>
           <button
-            onClick={() => setShowCorrectionModal(true)}
-            className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1.5"
+            type="button"
+            onClick={() => { setSelectedSessionId(''); setShowCorrectionModal(true); }}
+            className="btn btn-secondary btn-sm"
           >
-            <PlusCircle className="w-4 h-4" />
-            Request Attendance Correction
+            <PlusCircle className="w-3.5 h-3.5" />
+            Request correction
           </button>
         </div>
 
-        {historyLoading ? (
-          <div className="py-8 text-center text-xs text-slate-500">Loading attendance records...</div>
-        ) : history.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-500">
-            No attendance records found yet. Once you clock in and out, your sessions will be logged here.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-800/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+        <div className="table-wrapper">
+          <table className="data-table" aria-label="Attendance log">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Clock in</th>
+                <th>Clock out</th>
+                <th>Method</th>
+                <th className="right">Duration</th>
+                <th>Status</th>
+                <th className="right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historyLoading ? (
+                <SkeletonRows />
+              ) : history.length === 0 ? (
                 <tr>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Clock In</th>
-                  <th className="py-3 px-4">Clock Out</th>
-                  <th className="py-3 px-4">Method</th>
-                  <th className="py-3 px-4">Duration</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <td colSpan={7} style={{ textAlign: 'center', height: 80, color: 'var(--color-text-muted)' }}>
+                    No attendance records yet. Sessions will appear here after your first clock-in.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                {history.map((sess) => (
-                  <tr key={sess.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="py-3 px-4 font-mono font-medium">{sess.workDate}</td>
-                    <td className="py-3 px-4">
-                      {new Date(sess.clockInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              ) : history.map(sess => {
+                const statusVariant =
+                  sess.status === 'CLOCKED_IN' ? 'active' :
+                  sess.status === 'CLOCKED_OUT' ? 'success' : 'warning';
+
+                return (
+                  <tr key={sess.id}>
+                    <td className="tabular font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                      {fmtDate(sess.workDate)}
                     </td>
-                    <td className="py-3 px-4">
-                      {sess.clockOutAt 
-                        ? new Date(sess.clockOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : '—'}
+                    <td className="tabular">{fmtTime(sess.clockInAt)}</td>
+                    <td className="tabular">
+                      {sess.clockOutAt ? fmtTime(sess.clockOutAt) : <span style={{ color: 'var(--color-text-muted)' }}>—</span>}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-[10px]">
-                        {sess.clockInMethod.replace('_', ' ')}
-                      </span>
+                    <td>
+                      <span className="badge badge-neutral">{fmtMethod(sess.clockInMethod)}</span>
                     </td>
-                    <td className="py-3 px-4 font-mono">
-                      {sess.durationMinutes ? `${Math.floor(sess.durationMinutes / 60)}h ${sess.durationMinutes % 60}m` : 'In Progress'}
+                    <td className="right tabular">
+                      {fmtDuration(sess.durationMinutes, sess.clockOutAt)}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        sess.status === 'CLOCKED_IN' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' :
-                        sess.status === 'CLOCKED_OUT' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' :
-                        'bg-amber-500/15 text-amber-400'
-                      }`}>
-                        {sess.status.replace('_', ' ')}
-                      </span>
+                    <td>
+                      <StatusBadge variant={statusVariant} label={fmtStatus(sess.status)} />
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="right">
                       <button
-                        onClick={() => {
-                          setSelectedSessionId(sess.id);
-                          setShowCorrectionModal(true);
-                        }}
-                        className="text-slate-400 hover:text-white underline text-[11px]"
+                        type="button"
+                        onClick={() => { setSelectedSessionId(sess.id); setShowCorrectionModal(true); }}
+                        className="btn-icon"
+                        aria-label={`Request correction for session on ${fmtDate(sess.workDate)}`}
+                        title="Request correction"
                       >
-                        Correct
+                        <MoreHorizontal className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Correction Modal */}
+      {/* ── Correction modal ── */}
       {showCorrectionModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="text-base font-bold text-white">Submit Attendance Correction</h3>
-            <p className="text-xs text-slate-400">
-              HR will review and audit changes before modifying the historical attendance log.
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4 z-50"
+          style={{ background: 'rgba(15,23,42,0.4)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="correction-title"
+        >
+          <div className="card w-full max-w-md" style={{ padding: 24 }}>
+            <h3 id="correction-title" className="text-base font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>
+              Request attendance correction
+            </h3>
+            <p className="text-sm mb-5" style={{ color: 'var(--color-text-muted)' }}>
+              HR will review your request before modifying the attendance record.
             </p>
             <form onSubmit={submitCorrection} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Reason for correction</label>
+                <label htmlFor="correction-reason" className="form-label">Reason</label>
                 <textarea
+                  id="correction-reason"
                   required
                   value={correctionReason}
-                  onChange={(e) => setCorrectionReason(e.target.value)}
-                  placeholder="e.g. Forgot to clock out before leaving HQ office, worked until 18:30"
-                  className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white"
+                  onChange={e => setCorrectionReason(e.target.value)}
+                  placeholder="e.g. Forgot to clock out before leaving — worked until 18:30"
+                  className="form-textarea w-full"
                   rows={3}
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowCorrectionModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs"
+                  onClick={() => { setShowCorrectionModal(false); setCorrectionReason(''); }}
+                  className="btn btn-secondary"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold"
-                >
+                <button type="submit" className="btn btn-primary">
                   Submit to HR
                 </button>
               </div>

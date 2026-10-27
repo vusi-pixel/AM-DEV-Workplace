@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+﻿import React, { useState } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  Home, LayoutDashboard, Clock, CheckSquare, MessageSquare, Bell, BookOpen,
+  Home, LayoutDashboard, Clock, CheckSquare, BookOpen,
   User, Settings, HelpCircle, LogOut, Users, DollarSign, Shield, Rocket,
-  ChevronDown, ChevronRight, Layers, X,
+  ChevronDown, Layers, X,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -12,168 +12,168 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+interface NavItemProps {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  end?: boolean;
+  onClick?: () => void;
+}
+
+const SidebarNavItem: React.FC<NavItemProps> = ({ to, icon, label, end, onClick }) => (
+  <NavLink
+    to={to}
+    end={end}
+    onClick={onClick}
+    aria-current={undefined}
+    className={({ isActive }) =>
+      `nav-item${isActive ? ' active' : ''}`
+    }
+  >
+    {({ isActive }) => (
+      <>
+        <span aria-hidden="true" className="flex-shrink-0" style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+          {icon}
+        </span>
+        <span>{label}</span>
+      </>
+    )}
+  </NavLink>
+);
+
 export const Sidebar: React.FC<SidebarProps> = ({ open = false, onClose }) => {
   const { user, hasPermission, hasRole, logout } = useAuth();
   const [deptExpanded, setDeptExpanded] = useState(true);
 
-  const isHR = hasPermission('attendance.read.all') || hasPermission('leave.review') || hasRole('HR Manager') || hasRole('HR Officer') || hasRole('System Administrator');
+  const isHR      = hasPermission('attendance.read.all') || hasPermission('leave.review') || hasRole('HR Manager') || hasRole('HR Officer') || hasRole('System Administrator');
   const isFinance = hasPermission('finance.read') || hasRole('Finance Manager') || hasRole('Finance Officer') || hasRole('System Administrator');
-  const isAdmin = hasPermission('settings.manage') || hasRole('System Administrator');
+  const isAdmin   = hasPermission('settings.manage') || hasRole('System Administrator');
 
-  const navItem = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-      isActive
-        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold'
-        : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
-    }`;
-
-  const deptItem = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-      isActive
-        ? 'bg-slate-800 text-white border-l-2 border-blue-500 pl-2.5'
-        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-    }`;
+  const displayName = user?.profile?.displayName ||
+    `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() ||
+    user?.email || 'User';
+  const role = user?.roles?.[0] || 'Employee';
+  const initials = displayName.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <>
+      {/* Mobile overlay */}
       {open && (
         <button
           type="button"
           aria-label="Close navigation"
-          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden bg-black/30"
           onClick={onClose}
         />
       )}
+
       <aside
-        className={`w-64 bg-[#0b1b3a] border-r border-slate-800/80 flex flex-col h-screen sticky top-0 select-none overflow-hidden z-50
-          max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:transition-transform ${open ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'} lg:translate-x-0`}
+        className={`
+          flex flex-col h-screen sticky top-0 z-50 select-none overflow-hidden
+          max-lg:fixed max-lg:inset-y-0 max-lg:left-0
+          max-lg:transition-transform max-lg:duration-200
+          ${open ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'}
+          lg:translate-x-0
+        `}
+        style={{
+          width: 248,
+          background: 'var(--color-sidebar-bg)',
+          borderRight: '1px solid var(--color-sidebar-border)',
+        }}
       >
-        <div className="px-4 py-4 border-b border-slate-800/60 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 flex-shrink-0">
-              <Layers className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="text-sm font-extrabold text-white leading-none">AM DEV Pro</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Workplace</div>
-            </div>
-          </div>
-          <button type="button" className="lg:hidden text-slate-400 hover:text-white" onClick={onClose} aria-label="Close sidebar">
-            <X className="w-5 h-5" />
+        {/* Logo */}
+        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <Link to="/" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg">
+            <Layers className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-accent)' }} aria-hidden="true" />
+            <span className="font-semibold text-sm" style={{ color: 'var(--color-text-primary)' }}>AM DEV Pro</span>
+          </Link>
+          <button
+            type="button"
+            className="lg:hidden btn-icon"
+            onClick={onClose}
+            aria-label="Close sidebar"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5 scrollbar-thin" aria-label="Workplace">
-          <NavLink to="/" end className={navItem} onClick={onClose}>
-            <Home className="w-4 h-4 flex-shrink-0" />
-            <span>Home</span>
-          </NavLink>
-          <NavLink to="/employee" className={navItem} onClick={onClose}>
-            <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
-            <span>My Dashboard</span>
-          </NavLink>
-          <NavLink to="/attendance" className={navItem} onClick={onClose}>
-            <Clock className="w-4 h-4 flex-shrink-0" />
-            <span>Attendance</span>
-          </NavLink>
-          <NavLink to="/tasks" className={navItem} onClick={onClose}>
-            <CheckSquare className="w-4 h-4 flex-shrink-0" />
-            <span>Tasks &amp; Projects</span>
-          </NavLink>
-          <NavLink to="/messages" className={navItem} onClick={onClose}>
-            <MessageSquare className="w-4 h-4 flex-shrink-0" />
-            <span>Messages</span>
-          </NavLink>
-          <NavLink to="/notifications" className={navItem} onClick={onClose}>
-            <Bell className="w-4 h-4 flex-shrink-0" />
-            <span>Notifications</span>
-          </NavLink>
-          <NavLink to="/resources" className={navItem} onClick={onClose}>
-            <BookOpen className="w-4 h-4 flex-shrink-0" />
-            <span>Company Resources</span>
-          </NavLink>
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5 scrollbar-thin" aria-label="Main navigation">
+          {/* Main section */}
+          <p className="px-2 mb-1 mt-1 text-xs font-medium tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Main</p>
+          <SidebarNavItem to="/" end icon={<Home className="w-4 h-4" />} label="Home" onClick={onClose} />
+          <SidebarNavItem to="/employee" icon={<LayoutDashboard className="w-4 h-4" />} label="My dashboard" onClick={onClose} />
+          <SidebarNavItem to="/attendance" icon={<Clock className="w-4 h-4" />} label="Attendance" onClick={onClose} />
+          <SidebarNavItem to="/tasks" icon={<CheckSquare className="w-4 h-4" />} label="Tasks & projects" onClick={onClose} />
+          <SidebarNavItem to="/resources" icon={<BookOpen className="w-4 h-4" />} label="Company resources" onClick={onClose} />
 
-          <div className="pt-3">
+          {/* Departments section */}
+          <div className="mt-4">
             <button
               type="button"
               onClick={() => setDeptExpanded(!deptExpanded)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 hover:text-slate-400"
+              className="w-full flex items-center justify-between px-2 py-1 text-xs font-medium tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              style={{ color: 'var(--color-text-muted)' }}
+              aria-expanded={deptExpanded}
             >
               <span>Departments</span>
-              {deptExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              <ChevronDown
+                className="w-3.5 h-3.5 transition-transform duration-200"
+                style={{ transform: deptExpanded ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                aria-hidden="true"
+              />
             </button>
+
             {deptExpanded && (
               <div className="mt-1 space-y-0.5">
                 {isHR && (
-                  <NavLink to="/hr" className={deptItem} onClick={onClose}>
-                    <div className="p-1 rounded bg-blue-500/15 flex-shrink-0">
-                      <Users className="w-3.5 h-3.5 text-blue-400" />
-                    </div>
-                    <span>HR</span>
-                  </NavLink>
+                  <SidebarNavItem to="/hr" icon={<Users className="w-4 h-4" />} label="HR" onClick={onClose} />
                 )}
                 {isFinance && (
-                  <NavLink to="/finance" className={deptItem} onClick={onClose}>
-                    <div className="p-1 rounded bg-emerald-500/15 flex-shrink-0">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                    </div>
-                    <span>Finance</span>
-                  </NavLink>
+                  <SidebarNavItem to="/finance" icon={<DollarSign className="w-4 h-4" />} label="Finance" onClick={onClose} />
                 )}
                 {isAdmin && (
-                  <NavLink to="/admin" className={deptItem} onClick={onClose}>
-                    <div className="p-1 rounded bg-violet-500/15 flex-shrink-0">
-                      <Shield className="w-3.5 h-3.5 text-violet-400" />
-                    </div>
-                    <span>Administration</span>
-                  </NavLink>
+                  <SidebarNavItem to="/admin" icon={<Shield className="w-4 h-4" />} label="Administration" onClick={onClose} />
                 )}
-                <NavLink to="/projects" className={deptItem} onClick={onClose}>
-                  <div className="p-1 rounded bg-orange-500/15 flex-shrink-0">
-                    <Rocket className="w-3.5 h-3.5 text-orange-400" />
-                  </div>
-                  <span>Projects &amp; Operations</span>
-                </NavLink>
+                <SidebarNavItem to="/projects" icon={<Rocket className="w-4 h-4" />} label="Projects & operations" onClick={onClose} />
               </div>
             )}
           </div>
 
-          <div className="pt-3 space-y-0.5">
-            <div className="px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-500">Settings</div>
-            <NavLink to="/profile" className={navItem} onClick={onClose}>
-              <User className="w-4 h-4 flex-shrink-0" />
-              <span>Profile</span>
-            </NavLink>
-            <NavLink to="/work-mode" className={navItem} onClick={onClose}>
-              <Settings className="w-4 h-4 flex-shrink-0" />
-              <span>Preferences</span>
-            </NavLink>
-            <NavLink to="/help" className={navItem} onClick={onClose}>
-              <HelpCircle className="w-4 h-4 flex-shrink-0" />
-              <span>Help &amp; Support</span>
-            </NavLink>
-            <button
-              type="button"
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-300 hover:bg-red-500/10"
-            >
-              <LogOut className="w-4 h-4 flex-shrink-0" />
-              <span>Logout</span>
-            </button>
+          {/* Settings section */}
+          <div className="mt-4">
+            <p className="px-2 mb-1 text-xs font-medium tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Settings</p>
+            <SidebarNavItem to="/profile" icon={<User className="w-4 h-4" />} label="Profile" onClick={onClose} />
+            <SidebarNavItem to="/work-mode" icon={<Settings className="w-4 h-4" />} label="Preferences" onClick={onClose} />
+            <SidebarNavItem to="/help" icon={<HelpCircle className="w-4 h-4" />} label="Help & support" onClick={onClose} />
           </div>
         </nav>
 
-        <div className="flex-shrink-0 px-3 py-3 border-t border-slate-800/60 bg-slate-950/40">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
-              {user?.profile?.firstName?.[0] || user?.email?.[0] || 'U'}
+        {/* User menu at the bottom */}
+        <div
+          className="flex-shrink-0 px-3 py-3"
+          style={{ borderTop: '1px solid var(--color-border)' }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+              style={{ background: 'var(--color-accent-tint)', color: 'var(--color-accent)' }}
+            >
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-white truncate">
-                {user?.profile?.displayName || `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() || user?.email}
-              </div>
-              <div className="text-[10px] text-slate-400 truncate">{user?.roles?.[0] || 'Employee'}</div>
+              <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{displayName}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>{role}</p>
             </div>
+            <button
+              type="button"
+              onClick={logout}
+              className="btn-icon flex-shrink-0"
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>
