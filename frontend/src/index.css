@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -84,17 +84,15 @@
     font-size: 14px;
   }
   .btn-primary {
-    @apply btn text-white;
+    @apply btn text-white focus-visible:ring-blue-500;
     background-color: var(--color-accent);
-    focus-visible:ring-color: var(--color-accent);
   }
   .btn-primary:hover:not(:disabled)  { background-color: var(--color-accent-hover); }
   .btn-primary:active:not(:disabled) { transform: scale(0.98); }
 
   .btn-secondary {
     @apply btn text-slate-700 bg-white border border-slate-200
-           hover:bg-slate-50 active:bg-slate-100;
-    focus-visible:ring-color: #94A3B8;
+           hover:bg-slate-50 active:bg-slate-100 focus-visible:ring-slate-300;
   }
   .btn-danger {
     @apply btn text-white bg-red-600 hover:bg-red-700 active:bg-red-800;
